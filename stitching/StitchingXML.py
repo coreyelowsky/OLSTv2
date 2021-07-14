@@ -1613,13 +1613,6 @@ class StitchingXML():
 		
 		transformed_coords = np.transpose(transformed_coords)
 		return transformed_coords[:,:-1]
-		
-		
-
-
-
-		
-
 
 	def __str__(self):
 
