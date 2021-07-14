@@ -68,7 +68,6 @@ class StitchingXML():
 		self.pairwise_overlaps_1d['y'], self.pairwise_overlaps_2d['y'] = self.arrange_overlaps_grid('y', 'pairwise')
 		self.pairwise_overlaps_1d['z'], self.pairwise_overlaps_2d['z'] = self.arrange_overlaps_grid('z', 'pairwise')
 
-
 		
 	@staticmethod
 	def reslice(coords, image_lengths):
@@ -84,12 +83,12 @@ class StitchingXML():
 
 	@staticmethod
 	def shear(coords, image_lengths, shear_factor):
-
+		
 		image_lengths_shear = copy.deepcopy(image_lengths)
 		image_lengths_shear[1] = image_lengths[1] + abs(shear_factor)*image_lengths_shear[0]
 		image_lengths_shear = np.round(image_lengths_shear).astype(int)
 
-		coords[1] = coords[1] - image_lengths[1]/2 + shear_factor*(coords[0]-image_lengths[0]/2) + image_lengths_shear[1]/2 + 1
+		coords[1] = coords[1] - image_lengths[1]/2 + shear_factor*(coords[0]-image_lengths[0]/2) + image_lengths_shear[1]/2 + 1		
 
 		return coords, image_lengths_shear
 
@@ -1269,7 +1268,7 @@ class StitchingXML():
 		self.tree.write(out_path)
 
 
-	def calculate_fused_dimensions(self, * , downsampling=1):
+	def calculate_fused_dimensions(self):
 		
 		"""
 		Calculate dimensions of image in big stitcher for fusion
@@ -1509,7 +1508,7 @@ class StitchingXML():
 			setup_id = self.volume_to_setup_id(setup_id)
 
 		# get dimensions of fused image
-		fused_dims = self.calculate_fused_dimensions(downsampling=downsampling)
+		fused_dims = self.calculate_fused_dimensions()
 		fused_lengths = np.array([fused_dims['x']['length'],fused_dims['y']['length'],fused_dims['z']['length']])
 
 		# transform to big stitcher coords
@@ -1526,9 +1525,70 @@ class StitchingXML():
 		# downsample
 		fused_oblique_coords = (fused_oblique_coords / downsampling).round().astype(int)
 		fused_lengths = fused_lengths / downsampling
-		fused_lengths = np.array([self.bbox_rounding(coord) for coord in fused_lengths])		
+		fused_lengths = np.array([self.bbox_rounding(coord) for coord in fused_lengths])
+		
+		# coords and length should be float
+		fused_oblique_coords = fused_oblique_coords.astype(float)
 
+				
 		return fused_oblique_coords, fused_lengths
+
+
+	def volume_coords_to_coronal_cropped_coords_fast(self, coords, *, downsampling=10, isotropic=True, shear_factor, cropping_coord):
+	
+		"""
+		- Converts Big Stitcher coords into coronal cropped coords
+		- Uses matrix multiplication
+		- coords should be nx3 matrix
+
+		"""
+
+		# get dimensions of fused image
+		fused_dims = self.calculate_fused_dimensions()
+
+		# precalculate image sizes
+		fused_lengths = np.array([fused_dims['x']['length'],fused_dims['y']['length'],fused_dims['z']['length']])
+		fused_lengths[-1] = self.bbox_rounding(fused_lengths[-1]/self.anisotropy_factor) # preserve original anisotropy
+		fused_lengths = fused_lengths / downsampling # dowsample
+		fused_lengths = np.array([self.bbox_rounding(coord) for coord in fused_lengths])
+		image_lengths_isotropic = np.array([fused_lengths[0]/self.anisotropy_factor,fused_lengths[1]/self.anisotropy_factor, fused_lengths[2]]).astype(int)
+		image_lengths_isotropic = np.array([self.bbox_rounding(coord) for coord in image_lengths_isotropic])
+		image_lengths_after_reslice =  image_lengths_isotropic[[1,2,0]]
+		image_lengths_after_vertical_flip = copy.deepcopy(image_lengths_after_reslice)
+		image_lengths_after_shear = copy.deepcopy(image_lengths_after_vertical_flip)
+		image_lengths_after_shear[1] = (image_lengths_after_shear[1] + abs(shear_factor)*image_lengths_after_shear[0]).astype(int)
+		image_lengths_after_reslice_2 = image_lengths_after_shear[[1,2,0]]
+		image_lengths_after_rotate = image_lengths_after_reslice_2[[1,0,2]]
+
+		# define matrices
+		subtract_min_matrix = np.array([[1,0,0,-fused_dims['x']['min']],[0,1,0,-fused_dims['y']['min']],[0,0,1,-fused_dims['z']['min']],[0,0,0,1]])		
+		preserve_anisotropy_matrix = np.array([[1,0,0,0],[0,1,0,0],[0,0,1./self.anisotropy_factor,0],[0,0,0,1]])
+		downsample_fusion_matrix = np.array([[1./downsampling,0,0,0],[0,1./downsampling,0,0],[0,0,1./downsampling,0],[0,0,0,1]])
+		downsample_to_isotropic_matrix = np.array([[1./self.anisotropy_factor,0,0,0],[0,1./self.anisotropy_factor,0,0],[0,0,1,0],[0,0,0,1]])
+		reslice_matrix = np.array([[0,1,0,0],[0,0,1,0],[1,0,0,0],[0,0,0,1]])
+		vertical_flip_matrix = np.array([[1,0,0,0],[0,-1,0,image_lengths_after_reslice[1]-1],[0,0,1,0],[0,0,0,1]])
+		x_shear = shear_factor
+		shift_shear = -image_lengths_after_vertical_flip[1]/2 - shear_factor*image_lengths_after_vertical_flip[0]/2 + image_lengths_after_shear[1]/2 + 1
+		shear_matrix = np.array([[1,0,0,0],[x_shear, 1, 0, shift_shear],[0,0,1,0],[0,0,0,1]])
+		x_rotate = image_lengths_after_reslice_2[1] -1 
+		rotate_matrix =  np.array([[0,-1,0,x_rotate],[1,0,0,0],[0,0,1,0],[0,0,0,1]])
+		crop_shift_matrix = np.array([[1,0,0,0],[0,1,0,-cropping_coord],[0,0,1,0],[0,0,0,1]])
+
+
+		# append row of 1s	
+		coords = coords.T	
+		ones = np.ones(shape=(1,coords.shape[1]))
+		coords = np.vstack((coords,ones))
+
+		# apply transformations
+		out_coords = crop_shift_matrix @ rotate_matrix @ reslice_matrix @ shear_matrix @ vertical_flip_matrix @ reslice_matrix @ downsample_to_isotropic_matrix @ downsample_fusion_matrix @ preserve_anisotropy_matrix  @ subtract_min_matrix @ coords
+
+
+		
+		# clean up
+		out_coords = out_coords[:-1].T.round().astype(int)
+
+		return out_coords
 
 
 	def volume_coords_to_coronal_cropped_coords(self, volume_coords, setup_id, *, downsampling=10, isotropic=True, shear_factor, cropping_coord):
@@ -1537,7 +1597,7 @@ class StitchingXML():
 		Converts volume coordinates to coronal cropped coordinates after fusion
 		
 		"""
-
+	
 
 		# coordinates after fusion
 		fused_oblique_coords, fused_lengths = self.volume_coords_to_fused_oblique_coords(volume_coords, setup_id, downsampling)
@@ -1552,11 +1612,13 @@ class StitchingXML():
 			fused_lengths[1] /= self.anisotropy_factor
 			fused_lengths = np.array([self.bbox_rounding(coord) for coord in fused_lengths])
 
+			
 		# perform transformations
-
+		
 		# reslice and vertical flip
 		coords, image_lengths = self.reslice(fused_oblique_coords, fused_lengths)
 		coords = self.vertical_flip(coords, image_lengths)
+
 
 		# shear
 		coords, image_lengths = self.shear(coords, image_lengths, shear_factor)
