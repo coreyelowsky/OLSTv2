@@ -1598,14 +1598,46 @@ class StitchingXML():
 		sh = np.shape(coords)
 		transformed_coords = coords
 
+		# apply shift matrix
+		if shift_matrix is not None:
+			transformed_coords = shift_matrix @ transformed_coords
 		if 'stitching' in transforms and not ignore_stitching:
 			transformed_coords = np.linalg.inv(transforms['stitching']) @ transformed_coords
 
 		# transform coordinates
 		transformed_coords = np.linalg.inv(transforms['calibration']) @ np.linalg.inv(transforms['translation']) @ np.transpose(np.hstack((coords, np.ones((sh[0],1)))))
 
-		# only apply stitching if matrix exists and ignore_stitching flag is set to false
+		# only apply stitching if matrix exists and ignore_stitching flag is set to fals
 		
+		transformed_coords = np.transpose(transformed_coords)
+		return transformed_coords[:,:-1]
+
+	def transform_volume_coords_multiple(self, setup_id, coords, *, ignore_stitching=False, shift_matrix=None):
+
+		"""
+		transforms volume coordinates to big stitcher coordinates using transform matrices
+
+		"""
+
+		# ignore stitching matrix if given shift matrix
+		if shift_matrix is not None:
+			ignore_stitching = True
+
+		# allow setup_id to be volume_id
+		if str(setup_id).startswith('Z'):
+			setup_id = self.volume_to_setup_id(setup_id)
+
+		# get transform matrices
+		transforms = self.get_all_transforms(setup_id, square=True)
+
+		sh = np.shape(coords)
+
+		# transform coordinates
+		transformed_coords = transforms['translation'] @ transforms['calibration'] @ np.transpose(np.hstack((coords, np.ones((sh[0],1)))))
+
+		# only apply stitching if matrix exists and ignore_stitching flag is set to false
+		if 'stitching' in transforms and not ignore_stitching:
+			transformed_coords = transforms['stitching'] @ transformed_coords
 
 		# apply shift matrix
 		if shift_matrix is not None:
