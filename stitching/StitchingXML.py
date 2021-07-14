@@ -1573,16 +1573,6 @@ class StitchingXML():
 		return coords
 		
 
-		
-
-		
-		
-
-
-
-		
-
-
 	def __str__(self):
 
 		s = '\n###############\n'
