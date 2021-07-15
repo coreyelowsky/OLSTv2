@@ -1635,8 +1635,15 @@ class StitchingXML():
 		return coords
 		
 	def transform_volume_coords_base(self, setup_id, coords, *, ignore_stitching=False, shift_matrix=None):
+
+		"""
+		Wrapper function for transforming volume coords
+
+		"""
+
 		if coords.ndim == 1:
 			return self.transform_volume_coords(setup_id, coords, ignore_stitching=ignore_stitching, shift_matrix=shift_matrix)
+
 		return self.transform_volume_coords_multiple(setup_id, coords, ignore_stitching=ignore_stitching, shift_matrix=shift_matrix)
 		
 	def inverse_transform_volume_coords_multiple(self, setup_id, coords, *, ignore_stitching=False, shift_matrix=None):
