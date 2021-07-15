@@ -237,8 +237,8 @@ class StitchingXML():
 		if str(setup_id).startswith('Z'):
 			setup_id = self.volume_to_setup_id(setup_id)
 
-		left = (((setup_id + 1) % 25) == 0)
-		right = (setup_id % 25 == 0)
+		left = (((setup_id + 1) % self.num_y_volumes) == 0)
+		right = (setup_id % self.num_y_volumes == 0)
 		above = (setup_id < self.num_y_volumes)
 		below = (setup_id >= (self.num_volumes - self.num_y_volumes))
 		
@@ -1148,7 +1148,7 @@ class StitchingXML():
 	def save_xml(self, xml_name, write_stitching_transform=False):
 		
 		"""
-		saves xml file with updated registrations matrices
+		saves xml file with current tree
 	
 		"""
 
@@ -1715,32 +1715,13 @@ class StitchingXML():
 		transformed_coords = np.transpose(transformed_coords)
 		return transformed_coords[:,:-1]
 
-	def __str__(self):
 
-		s = '\n###############\n'
-		s += 'Stitching Info\n'
-		s += '###############\n\n'
-		s += 'XML Path: ' + self.xml_path + '\n'
-		s += '# Volumes: ' + str(self.num_volumes) + '\n'
-		s += '	# Y: ' + str(self.num_y_volumes) + '\n'
-		s += '	# Z: ' + str(self.num_z_volumes) + '\n'
-		s += 'Voxel Size: ' + str(self.voxel_size) + '\n'
-		s += 'Volume Size: ' + str(self.volume_size) + '\n'
-		s += 'Anisotropy Factor: ' + str(self.anisotropy_factor) + '\n'
-		s += '# Pairwise Shifts: ' + str(len(self.pairwise_shifts)) + '\n'
-		s += self.shift_lengths_to_string()
-		
-		return s
+	def modify_image_loader_for_saving_as_n5(self):
 
+		"""
+		Modifies XML image loader to be compatible with N5
 
-
-##################################### to fix ##################################
-
-
-
-	
-
-	def modifyImageLoaderForSavingAsN5Parallelized(self):
+		"""
 		
 		# get image loader element
 		imageLoader = self.root.find('SequenceDescription').find('ImageLoader')
@@ -1762,10 +1743,28 @@ class StitchingXML():
 		n5Child.text = 'dataset.n5'
 
 		# save xml
+		self.save_xml('translate_to_grid')
 
-		self.writeXML('translate_to_grid.xml')
-	
+	def __str__(self):
 
+		s = '\n###############\n'
+		s += 'Stitching Info\n'
+		s += '###############\n\n'
+		s += 'XML Path: ' + self.xml_path + '\n'
+		s += '# Volumes: ' + str(self.num_volumes) + '\n'
+		s += '	# Y: ' + str(self.num_y_volumes) + '\n'
+		s += '	# Z: ' + str(self.num_z_volumes) + '\n'
+		s += 'Voxel Size: ' + str(self.voxel_size) + '\n'
+		s += 'Volume Size: ' + str(self.volume_size) + '\n'
+		s += 'Anisotropy Factor: ' + str(self.anisotropy_factor) + '\n'
+		s += '# Pairwise Shifts: ' + str(len(self.pairwise_shifts)) + '\n'
+		s += self.shift_lengths_to_string()
+		
+		return s
+
+
+
+##################################### to fix ##################################
 
 
 	def getCoordsAdjacentVolume(self, sourceVolume, imageCoordsSource, targetVolume):
@@ -1813,42 +1812,7 @@ class StitchingXML():
 
 		return imageCoordsTarget
 		
-
-	def stitchingAnalysis(self, path, sectioning):
-
-		data = self.estimateOverlaps(sectioning=sectioning, analysis=True)
-		with open(join(path, 'stitching_analysis.txt'), 'w') as fp:
-			fp.write('Y\n')
-			fp.write('Mean Overlap: ' + str(data['meanOverlapY']) + '\n')
-			fp.write('Standard Deviation Overlap: ' + str(data['stdOverlapY'])+ '\n')
-			fp.write('Mean Correlation: ' + str(data['meanCorrY'])+ '\n')
-			fp.write('Standard Deviation Correlation: ' + str(data['stdCorrY'])+ '\n')
-			fp.write('\n')
-
-			fp.write('Z\n')
-			fp.write('Mean Overlap: ' + str(data['meanOverlapZ'])+ '\n')
-			fp.write('Standard Deviation Overlap: ' + str(data['stdOverlapZ'])+ '\n')
-			fp.write('Mean Correlation: ' + str(data['meanCorrZ'])+ '\n')
-			fp.write('Standard Deviation Correlation: ' + str(data['stdCorrZ'])+ '\n')
-			fp.write('\n')
-
-			if sectioning:
-
-				fp.write('Z (Cutting)\n')
-				fp.write('Mean Overlap: ' + str(data['meanOverlapZSectioning'])+ '\n')
-				fp.write('Standard Deviation Overlap: ' + str(data['stdOverlapZSectioning'])+ '\n')
-				fp.write('Mean Correlation: ' + str(data['meanCorrZSectioning'])+ '\n')
-				fp.write('Standard Deviation Correlation: ' + str(data['stdCorrZSectioning'])+ '\n')
-				fp.write('\n')
-			
-
-			fp.write('X\n')
-			fp.write('Mean Overlap: ' + str(data['meanOverlapX'])+ '\n')
-			fp.write('Standard Deviation Overlap: ' + str(data['stdOverlapX']))
-			fp.write('\n')
-
-		
-
+	
 	
 
 	def fusedCoronalCoords_to_volume(self, coords):
