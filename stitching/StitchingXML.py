@@ -1534,7 +1534,7 @@ class StitchingXML():
 		return fused_oblique_coords, fused_lengths
 
 
-	def volume_coords_to_coronal_cropped_coords_fast(self, coords, *, downsampling=10, isotropic=True, shear_factor, cropping_coord):
+	def stitching_coords_to_coronal_cropped_coords_fast(self, coords, *, downsampling=10, isotropic=True, shear_factor, cropping_coord):
 	
 		"""
 		- Converts Big Stitcher coords into coronal cropped coords
