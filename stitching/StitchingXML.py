@@ -1240,7 +1240,7 @@ class StitchingXML():
 		for i in range(1,self.num_z_volumes):
 			
 			# path for local xml
-			local_xml_path = join(xml_dir, str(i) + '_' + str(i+1),'translate_to_grid.xml')
+			local_xml_path = join(xml_dir, 'pairwise_shifts','Z_' + str(i) + '_' + str(i+1),'translate_to_grid.xml')
 			
 			# local xml objext
 			local_xml = StitchingXML(local_xml_path, sectioning = self.sectioning)
