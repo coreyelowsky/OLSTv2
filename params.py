@@ -1,0 +1,4 @@
+SHEAR_FACTOR_ISOTROPIC = -.707 
+
+
+
