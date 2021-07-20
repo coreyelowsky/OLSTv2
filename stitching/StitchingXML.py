@@ -16,9 +16,25 @@ import xml.etree.ElementTree as ET
 import numpy as np
 import copy
 import math
+import tifffile as tif
 
 from sys import exit
-from os.path import dirname, join
+from os.path import dirname, join, realpath
+from os import listdir
+from PIL import Image
+from PIL.TiffTags import TAGS
+
+import warnings
+warnings.filterwarnings("ignore")
+
+import sys
+import os
+
+# add path to params
+dir_path = dirname(realpath(__file__))
+sys.path.append(join(dir_path,'..'))
+
+import params
 
 class StitchingXML():
 
@@ -68,43 +84,27 @@ class StitchingXML():
 		self.pairwise_overlaps_1d['y'], self.pairwise_overlaps_2d['y'] = self.arrange_overlaps_grid('y', 'pairwise')
 		self.pairwise_overlaps_1d['z'], self.pairwise_overlaps_2d['z'] = self.arrange_overlaps_grid('z', 'pairwise')
 
+
+	@staticmethod
+	def extract_image_size_from_meta_data(image_path):
+
+		"""
+		extracts image size from metadata without loading	
+
+		"""
+
+		with Image.open(image_path) as img:
+		    meta_dict = {TAGS[key] : img.tag[key] for key in img.tag.keys()}
 		
-	@staticmethod
-	def reslice(coords, image_lengths):
-
-		return coords[[1,2,0]], image_lengths[[1,2,0]]
-
-	@staticmethod
-	def vertical_flip(coords, image_lengths):
-	
-		coords[1] = image_lengths[1] - coords[1] - 1
-
-		return coords
-
-	@staticmethod
-	def shear(coords, image_lengths, shear_factor):
+		x_length = meta_dict['ImageWidth'][0]
+		y_length = meta_dict['ImageLength'][0]
+		z_length = int([x for x in meta_dict['ImageDescription'][0].split('\n') if 'images' in x][0].split('=')[-1])
 		
-		image_lengths_shear = copy.deepcopy(image_lengths)
-		image_lengths_shear[1] = image_lengths[1] + abs(shear_factor)*image_lengths_shear[0]
-		image_lengths_shear = np.round(image_lengths_shear).astype(int)
-
-		coords[1] = coords[1] - image_lengths[1]/2 + shear_factor*(coords[0]-image_lengths[0]/2) + image_lengths_shear[1]/2 + 1		
-
-		return coords, image_lengths_shear
-
-	@staticmethod
-	def rotate(coords,imageLengths):
-
-		coords = coords[[1,0,2]]
-		coords[0] = imageLengths[1] - coords[0] - 1
-	
-		return coords, imageLengths[[1,0,2]]
-
+		return (x_length, y_length, z_length)
 
 
 	@staticmethod
 	def bbox_rounding(value):
-
 		"""
 		rounds to number to higher magnitude	
 
@@ -162,6 +162,29 @@ class StitchingXML():
 		"""
 
 		return ' '.join(matrix.flatten().astype(str))
+
+	
+	def calculate_coronal_cropped_res(self, isotropic, downsampling):
+
+		"""
+		calculates output res based on isotropic and downsampling
+
+		"""
+
+		out_res = np.array(self.voxel_size)*downsampling
+		if isotropic:
+			out_res = np.array([out_res[2]]*3)
+		out_res = out_res[[0,2,1]]
+
+		# create out res string
+		
+		out_res_string =[str(x) for x in out_res]
+		for i, x in enumerate(out_res_string):
+			if x.endswith('.0'):
+				out_res_string[i] = x[:-2]
+		out_res_string = 'x'.join(out_res_string)
+
+		return out_res, out_res_string
 
 
 	def any_pairwise_shift_exists(self):
@@ -1350,7 +1373,7 @@ class StitchingXML():
 		self.tree.write(out_path)
 
 
-	def calculate_fused_dimensions(self):
+	def calculate_fused_dimensions(self, preserve_anisotropy=False, downsampling=1):
 		
 		"""
 		Calculate dimensions of image in big stitcher for fusion
@@ -1388,7 +1411,16 @@ class StitchingXML():
 		y_length = y_max - y_min + 1
 		z_length = z_max - z_min + 1
 
-		
+		if preserve_anisotropy:
+			z_length = self.bbox_rounding(z_length/self.anisotropy_factor)
+			
+			# adding 2 provides more accurate result
+			z_length += 2
+
+		x_length = self.bbox_rounding(x_length/downsampling)
+		y_length = self.bbox_rounding(y_length/downsampling)
+		z_length = self.bbox_rounding(z_length/downsampling)
+			
 		return {'x':{'min':x_min,'max':x_max,'length':x_length},'y':{'min':y_min,'max':y_max,'length':y_length},'z':{'min':z_min,'max':z_max,'length':z_length}}
 
 
@@ -1616,7 +1648,7 @@ class StitchingXML():
 		return fused_oblique_coords, fused_lengths
 
 
-	def stitching_coords_to_coronal_cropped_coords_fast(self, coords, *, downsampling=10, isotropic=True, shear_factor, cropping_coord):
+	def stitching_coords_to_coronal_cropped_coords(self, coords, *, downsampling, isotropic, cropping_coord):
 	
 		"""
 		- Converts Big Stitcher coords into coronal cropped coords
@@ -1625,28 +1657,42 @@ class StitchingXML():
 
 		"""
 
+		# fix 1d coords case
+		if coords.ndim == 1:
+			coords = coords.reshape(1,-1)
+
+		# get proper shear factor
+		if isotropic:
+			shear_factor = params.SHEAR_FACTOR_ISOTROPIC
+		else:
+			shear_factor = params.SHEAR_FACTOR_ISOTROPIC / self.anisotropy_factor
+
 		# get dimensions of fused image
-		fused_dims = self.calculate_fused_dimensions()
+		fused_dims = self.calculate_fused_dimensions(preserve_anisotropy=True, downsampling=downsampling)
 
 		# precalculate image sizes
 		fused_lengths = np.array([fused_dims['x']['length'],fused_dims['y']['length'],fused_dims['z']['length']])
-		fused_lengths[-1] = self.bbox_rounding(fused_lengths[-1]/self.anisotropy_factor) # preserve original anisotropy
-		fused_lengths = fused_lengths / downsampling # dowsample
-		fused_lengths = np.array([self.bbox_rounding(coord) for coord in fused_lengths])
-		image_lengths_isotropic = np.array([fused_lengths[0]/self.anisotropy_factor,fused_lengths[1]/self.anisotropy_factor, fused_lengths[2]]).astype(int)
-		image_lengths_isotropic = np.array([self.bbox_rounding(coord) for coord in image_lengths_isotropic])
-		image_lengths_after_reslice =  image_lengths_isotropic[[1,2,0]]
+	
+		if isotropic:
+			image_lengths_isotropic = np.array([fused_lengths[0]/self.anisotropy_factor,fused_lengths[1]/self.anisotropy_factor, fused_lengths[2]]).astype(int)
+			image_lengths_isotropic = np.array([self.bbox_rounding(coord) for coord in image_lengths_isotropic]) # rounding
+			image_lengths_after_reslice =  image_lengths_isotropic[[1,2,0]]
+		else:
+			image_lengths_after_reslice =  fused_lengths[[1,2,0]]
+
 		image_lengths_after_vertical_flip = copy.deepcopy(image_lengths_after_reslice)
 		image_lengths_after_shear = copy.deepcopy(image_lengths_after_vertical_flip)
 		image_lengths_after_shear[1] = (image_lengths_after_shear[1] + abs(shear_factor)*image_lengths_after_shear[0]).astype(int)
 		image_lengths_after_reslice_2 = image_lengths_after_shear[[1,2,0]]
 		image_lengths_after_rotate = image_lengths_after_reslice_2[[1,0,2]]
 
+
 		# define matrices
 		subtract_min_matrix = np.array([[1,0,0,-fused_dims['x']['min']],[0,1,0,-fused_dims['y']['min']],[0,0,1,-fused_dims['z']['min']],[0,0,0,1]])		
 		preserve_anisotropy_matrix = np.array([[1,0,0,0],[0,1,0,0],[0,0,1./self.anisotropy_factor,0],[0,0,0,1]])
 		downsample_fusion_matrix = np.array([[1./downsampling,0,0,0],[0,1./downsampling,0,0],[0,0,1./downsampling,0],[0,0,0,1]])
-		downsample_to_isotropic_matrix = np.array([[1./self.anisotropy_factor,0,0,0],[0,1./self.anisotropy_factor,0,0],[0,0,1,0],[0,0,0,1]])
+		if isotropic:
+			downsample_to_isotropic_matrix = np.array([[1./self.anisotropy_factor,0,0,0],[0,1./self.anisotropy_factor,0,0],[0,0,1,0],[0,0,0,1]])
 		reslice_matrix = np.array([[0,1,0,0],[0,0,1,0],[1,0,0,0],[0,0,0,1]])
 		vertical_flip_matrix = np.array([[1,0,0,0],[0,-1,0,image_lengths_after_reslice[1]-1],[0,0,1,0],[0,0,0,1]])
 		x_shear = shear_factor
@@ -1656,66 +1702,25 @@ class StitchingXML():
 		rotate_matrix =  np.array([[0,-1,0,x_rotate],[1,0,0,0],[0,0,1,0],[0,0,0,1]])
 		crop_shift_matrix = np.array([[1,0,0,0],[0,1,0,-cropping_coord],[0,0,1,0],[0,0,0,1]])
 
-
 		# append row of 1s	
 		coords = coords.T	
 		ones = np.ones(shape=(1,coords.shape[1]))
 		coords = np.vstack((coords,ones))
 
-		# apply transformations
-		out_coords = crop_shift_matrix @ rotate_matrix @ reslice_matrix @ shear_matrix @ vertical_flip_matrix @ reslice_matrix @ downsample_to_isotropic_matrix @ downsample_fusion_matrix @ preserve_anisotropy_matrix  @ subtract_min_matrix @ coords
-
-		
-		# clean up
-		out_coords = out_coords[:-1].T.round().astype(int)
-
-		return out_coords
-
-
-	def volume_coords_to_coronal_cropped_coords(self, volume_coords, setup_id, *, downsampling=10, isotropic=True, shear_factor, cropping_coord):
-		
-		"""
-		Converts volume coordinates to coronal cropped coordinates after fusion
-		
-		"""
-	
-
-		# coordinates after fusion
-		fused_oblique_coords, fused_lengths = self.volume_coords_to_fused_oblique_coords(volume_coords, setup_id, downsampling)
-
-		# make isotropic
+		# create transformation matrix
 		if isotropic:
-			fused_oblique_coords[0] /= self.anisotropy_factor
-			fused_oblique_coords[1] /= self.anisotropy_factor
-			fused_oblique_coords = fused_oblique_coords.round().astype(int)
+			transformation_matrix = crop_shift_matrix @ rotate_matrix @ reslice_matrix @ shear_matrix @ vertical_flip_matrix @ reslice_matrix @ downsample_to_isotropic_matrix @ downsample_fusion_matrix @ preserve_anisotropy_matrix  @ subtract_min_matrix
+		else:
+			transformation_matrix = crop_shift_matrix @ rotate_matrix @ reslice_matrix @ shear_matrix @ vertical_flip_matrix @ reslice_matrix @ downsample_fusion_matrix @ preserve_anisotropy_matrix  @ subtract_min_matrix
 
-			fused_lengths[0] /= self.anisotropy_factor
-			fused_lengths[1] /= self.anisotropy_factor
-			fused_lengths = np.array([self.bbox_rounding(coord) for coord in fused_lengths])
-
-			
-		# perform transformations
-		
-		# reslice and vertical flip
-		coords, image_lengths = self.reslice(fused_oblique_coords, fused_lengths)
-		coords = self.vertical_flip(coords, image_lengths)
-
-
-		# shear
-		coords, image_lengths = self.shear(coords, image_lengths, shear_factor)
-
-		# reslice
-		coords, image_lengths = self.reslice(coords, image_lengths)
-
-		# rotate 90 degrees
-		coords, image_lengths = self.rotate(coords,image_lengths)
-
-		# crop
-		coords[1] -= cropping_coord
+	
+		# apply transformations
+		coords = transformation_matrix @ coords
+	
+		# clean up
+		coords = coords[:-1].T.round().astype(int)
 
 		return coords
-		
-	
 
 
 	def modify_image_loader_for_saving_as_n5(self):
@@ -1783,6 +1788,96 @@ class StitchingXML():
 		volume_coords_from_target = self.transform_stitching_coords_to_volume_coords(target_setup, stitching_coords_from_source, ignore_stitching=True, shift_matrix=None)		
 	
 		return volume_coords_from_target
+
+
+	def overlay_centroids_on_cropped_coronal(self, *, brain, stitching_path, centroids_path, downsampling, isotropic, outpath=None):
+
+		"""
+		- overlays centroids on coronal image
+		- input coordinates assumed to be in volume coordinates
+
+		"""
+
+		# calculate output res
+		_, out_res_string = self.calculate_coronal_cropped_res(isotropic, downsampling)
+
+
+		# set up paths
+		brain_stitching_path = join(stitching_path, brain)
+		fusion_path = join(brain_stitching_path, 'fusion_' + str(downsampling) + '_parallel')
+		if isotropic:
+			fused_image_dir = join(fusion_path,'isotropic')
+		else:
+			fused_image_dir = join(fusion_path,'full_res')
+
+		fused_image_path = join(fused_image_dir, 'fused_coronal_' + out_res_string + '_CROPPED.tif')
+	
+		if outpath is None:
+			outpath = fused_image_dir
+
+		# get exact dimenesions of image
+		image_size = self.extract_image_size_from_meta_data(fused_image_path)
+		print('Ouptut Image Size:', image_size)
+		image_shape = image_size[::-1]	
+	
+		# get cropping info
+		cropping_path = join(fused_image_dir, 'cropping_info_coronal.txt')
+		with open(cropping_path, 'r') as fp:
+			cropping_coord = int(fp.readline())
+
+
+		# get all centroid files
+		csv_names = listdir(centroids_path)
+
+		# array to hold centroids
+		centroids_all = np.zeros(shape=(0,3), dtype=int)
+
+		# load all centroids
+		for csv_name in csv_names:
+
+			volume_id = csv_name[:7]
+			print(volume_id)
+
+			# load centroids
+			csv_path = join(centroids_path, csv_name)
+			centroids = np.genfromtxt(csv_path, delimiter=',')
+
+
+			if len(centroids) == 0:
+				print('No Centroids In Volume...')
+				continue
+	
+			if centroids.ndim == 1:
+				centroids = centroids.reshape(1,-1)	
+	
+			# transform to stitching coords
+			centroids = self.transform_volume_coords_to_stitching_coords(volume_id, centroids, ignore_stitching=True, shift_matrix=None)
+
+			# transform to coronal cropped
+			centroids = self.stitching_coords_to_coronal_cropped_coords(centroids,downsampling=downsampling, isotropic=isotropic, cropping_coord=cropping_coord)
+
+			centroids_all = np.vstack((centroids_all, centroids))
+
+
+		print()
+		print('# Centroids: ', len(centroids_all))
+		
+		# create image
+		image = np.zeros(shape=image_shape, dtype=np.uint8)
+
+		# clip to avoid out of bounds
+		centroids_all[:,0] = np.clip(centroids_all[:,0], 0, image_size[0]-1)
+		centroids_all[:,1] = np.clip(centroids_all[:,1], 0, image_size[1]-1)
+		centroids_all[:,2] = np.clip(centroids_all[:,2], 0, image_size[2]-1)
+
+		# set all centroids
+		image[centroids_all[:,2],centroids_all[:,1],centroids_all[:,0]] = 255
+
+		# save
+		tif.imsave(join(outpath, 'centroids_overlayed_on_coronal_cropped_' + out_res_string + '.tif') , image, imagej=True)
+
+		
+
 
 	def __str__(self):
 
