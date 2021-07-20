@@ -164,7 +164,7 @@ class StitchingXML():
 		return ' '.join(matrix.flatten().astype(str))
 
 	
-	def calculate_coronal_cropped_res(self, isotropic, downsampling):
+	def calculate_output_res(self, isotropic, downsampling, fused_image_type):
 
 		"""
 		calculates output res based on isotropic and downsampling
@@ -174,7 +174,9 @@ class StitchingXML():
 		out_res = np.array(self.voxel_size)*downsampling
 		if isotropic:
 			out_res = np.array([out_res[2]]*3)
-		out_res = out_res[[0,2,1]]
+
+		if fused_image_type in ['coronal', 'coronal cropped']:
+			out_res = out_res[[0,2,1]]
 
 		# create out res string
 		
@@ -1414,7 +1416,7 @@ class StitchingXML():
 		if preserve_anisotropy:
 			z_length = self.bbox_rounding(z_length/self.anisotropy_factor)
 			
-			# adding 2 provides more accurate result
+			# adding due to padding in front and back
 			z_length += 2
 
 		x_length = self.bbox_rounding(x_length/downsampling)
@@ -1606,49 +1608,8 @@ class StitchingXML():
 		return {'left':left, 'right':right, 'top':top,'bottom':bottom, 'front':front, 'back':back}
 
 
-	def volume_coords_to_fused_oblique_coords(self, volume_coords, setup_id, downsampling):
 
-		"""
-		- Converts volume coordinates in specific volume into coordinates in fused oblique image
-		- volume_coords are 0 indexed
-		- setup_id can be setup id or volume id
-		- downsmpling is factor by which data is downsampled
-		
-
-		"""
-
-		# allow input to be volume_id
-		if str(setup_id).startswith('Z'):
-			setup_id = self.volume_to_setup_id(setup_id)
-
-		# get dimensions of fused image
-		fused_dims = self.calculate_fused_dimensions()
-		fused_lengths = np.array([fused_dims['x']['length'],fused_dims['y']['length'],fused_dims['z']['length']])
-
-		# transform to big stitcher coords
-		big_stitcher_coords = self.transform_volume_coords_to_stitching_coords(setup_id, volume_coords)
-
-		# get coordinated in fused image by subtracting mins of fused dimensions
-		fused_mins = np.array([fused_dims['x']['min'],fused_dims['y']['min'],fused_dims['z']['min']])
-		fused_oblique_coords = big_stitcher_coords - fused_mins
-	
-		# preserve original anisotropy
-		fused_oblique_coords[-1] /= self.anisotropy_factor
-		fused_lengths[-1] = self.bbox_rounding(fused_lengths[-1]/self.anisotropy_factor)
-
-		# downsample
-		fused_oblique_coords = (fused_oblique_coords / downsampling).round().astype(int)
-		fused_lengths = fused_lengths / downsampling
-		fused_lengths = np.array([self.bbox_rounding(coord) for coord in fused_lengths])
-		
-		# coords and length should be float
-		fused_oblique_coords = fused_oblique_coords.astype(float)
-
-				
-		return fused_oblique_coords, fused_lengths
-
-
-	def stitching_coords_to_coronal_cropped_coords(self, coords, *, downsampling, isotropic, cropping_coord):
+	def stitching_coords_to_fused_image_coords(self, coords, *, fused_image_type, downsampling, isotropic, cropping_coord=0):
 	
 		"""
 		- Converts Big Stitcher coords into coronal cropped coords
@@ -1656,6 +1617,11 @@ class StitchingXML():
 		- coords should be nx3 matrix
 
 		"""
+
+		# check fused image type
+		valid_fused_image_types = ['oblique','coronal', 'coronal_cropped']
+		if fused_image_type not in valid_fused_image_types:
+			exit('ERROR: Fused Image Type must be one of the following: ' + str(valid_fused_image_types))
 
 		# fix 1d coords case
 		if coords.ndim == 1:
@@ -1702,20 +1668,28 @@ class StitchingXML():
 		rotate_matrix =  np.array([[0,-1,0,x_rotate],[1,0,0,0],[0,0,1,0],[0,0,0,1]])
 		crop_shift_matrix = np.array([[1,0,0,0],[0,1,0,-cropping_coord],[0,0,1,0],[0,0,0,1]])
 
-		# append row of 1s	
+		# append row of 1s
 		coords = coords.T	
 		ones = np.ones(shape=(1,coords.shape[1]))
 		coords = np.vstack((coords,ones))
 
-		# create transformation matrix
-		if isotropic:
-			transformation_matrix = crop_shift_matrix @ rotate_matrix @ reslice_matrix @ shear_matrix @ vertical_flip_matrix @ reslice_matrix @ downsample_to_isotropic_matrix @ downsample_fusion_matrix @ preserve_anisotropy_matrix  @ subtract_min_matrix
-		else:
-			transformation_matrix = crop_shift_matrix @ rotate_matrix @ reslice_matrix @ shear_matrix @ vertical_flip_matrix @ reslice_matrix @ downsample_fusion_matrix @ preserve_anisotropy_matrix  @ subtract_min_matrix
+		# get coordinate in fused oblique
+		coords = downsample_fusion_matrix @ preserve_anisotropy_matrix  @ subtract_min_matrix @ coords
 
+		# make isotropic
+		if isotropic:
+			coords = downsample_to_isotropic_matrix @ coords
+		
+		# create transformation matrix
+		if fused_image_type == 'oblique':
+			transform_matrix = np.eye(4)
+		elif fused_image_type == 'coronal':
+			transform_matrix = rotate_matrix @ reslice_matrix @ shear_matrix @ vertical_flip_matrix @ reslice_matrix 
+		elif fused_image_type == 'coronal_cropped':
+			transform_matrix = crop_shift_matrix @ rotate_matrix @ reslice_matrix @ shear_matrix @ vertical_flip_matrix @ reslice_matrix
 	
 		# apply transformations
-		coords = transformation_matrix @ coords
+		coords = transform_matrix @ coords
 	
 		# clean up
 		coords = coords[:-1].T.round().astype(int)
@@ -1790,7 +1764,7 @@ class StitchingXML():
 		return volume_coords_from_target
 
 
-	def overlay_centroids_on_cropped_coronal(self, *, brain, stitching_path, centroids_path, downsampling, isotropic, outpath=None):
+	def overlay_centroids_on_fused_image(self, *, fused_image_type, brain, stitching_path, centroids_path, downsampling, isotropic, outpath=None):
 
 		"""
 		- overlays centroids on coronal image
@@ -1798,33 +1772,49 @@ class StitchingXML():
 
 		"""
 
-		# calculate output res
-		_, out_res_string = self.calculate_coronal_cropped_res(isotropic, downsampling)
+		# check fused image type
+		valid_fused_image_types = ['oblique','coronal', 'coronal_cropped']
+		if fused_image_type not in valid_fused_image_types:
+			exit('ERROR: Fused Image Type must be one of the following: ' + str(valid_fused_image_types))
 
+		# calculate output res
+		_, out_res_string = self.calculate_output_res(isotropic, downsampling, fused_image_type)
 
 		# set up paths
 		brain_stitching_path = join(stitching_path, brain)
 		fusion_path = join(brain_stitching_path, 'fusion_' + str(downsampling) + '_parallel')
+
 		if isotropic:
 			fused_image_dir = join(fusion_path,'isotropic')
 		else:
-			fused_image_dir = join(fusion_path,'full_res')
-
-		fused_image_path = join(fused_image_dir, 'fused_coronal_' + out_res_string + '_CROPPED.tif')
+			if fused_image_type == 'oblique':
+				fused_image_dir = fusion_path
+			else:
+				fused_image_dir = join(fusion_path,'full_res')
 	
 		if outpath is None:
 			outpath = fused_image_dir
 
+		# get path of fused image
+		if fused_image_type == 'oblique':
+			fused_image_path = join(fused_image_dir, 'fused_oblique_' + out_res_string + '.tif')
+		elif fused_image_type == 'coronal':
+			fused_image_path = join(fused_image_dir, 'fused_coronal_' + out_res_string + '.tif')
+		elif fused_image_type == 'coronal_cropped':
+			fused_image_path = join(fused_image_dir, 'fused_coronal_' + out_res_string + '_CROPPED.tif')
+		
 		# get exact dimenesions of image
 		image_size = self.extract_image_size_from_meta_data(fused_image_path)
-		print('Ouptut Image Size:', image_size)
+		print('Output Image Size:', image_size)
 		image_shape = image_size[::-1]	
 	
-		# get cropping info
-		cropping_path = join(fused_image_dir, 'cropping_info_coronal.txt')
-		with open(cropping_path, 'r') as fp:
-			cropping_coord = int(fp.readline())
-
+		# get cropping info if needed
+		if 'cropped' in fused_image_type:
+			cropping_path = join(fused_image_dir, 'cropping_info_coronal.txt')
+			with open(cropping_path, 'r') as fp:
+				cropping_coord = int(fp.readline())
+		else:
+			cropping_coord = 0
 
 		# get all centroid files
 		csv_names = listdir(centroids_path)
@@ -1842,19 +1832,18 @@ class StitchingXML():
 			csv_path = join(centroids_path, csv_name)
 			centroids = np.genfromtxt(csv_path, delimiter=',')
 
-
 			if len(centroids) == 0:
 				print('No Centroids In Volume...')
 				continue
-	
+
 			if centroids.ndim == 1:
 				centroids = centroids.reshape(1,-1)	
-	
+
 			# transform to stitching coords
 			centroids = self.transform_volume_coords_to_stitching_coords(volume_id, centroids, ignore_stitching=True, shift_matrix=None)
 
 			# transform to coronal cropped
-			centroids = self.stitching_coords_to_coronal_cropped_coords(centroids,downsampling=downsampling, isotropic=isotropic, cropping_coord=cropping_coord)
+			centroids = self.stitching_coords_to_fused_image_coords(centroids,fused_image_type=fused_image_type,downsampling=downsampling, isotropic=isotropic, cropping_coord=cropping_coord)
 
 			centroids_all = np.vstack((centroids_all, centroids))
 
@@ -1874,7 +1863,7 @@ class StitchingXML():
 		image[centroids_all[:,2],centroids_all[:,1],centroids_all[:,0]] = 255
 
 		# save
-		tif.imsave(join(outpath, 'centroids_overlayed_on_coronal_cropped_' + out_res_string + '.tif') , image, imagej=True)
+		tif.imsave(join(outpath, 'centroids_overlayed_on_' + fused_image_type + '_' + out_res_string + '.tif') , image, imagej=True)
 
 		
 
