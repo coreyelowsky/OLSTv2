@@ -1764,7 +1764,7 @@ class StitchingXML():
 		return volume_coords_from_target
 
 
-	def overlay_centroids_on_fused_image(self, *, fused_image_type, brain, stitching_path, centroids_path, downsampling, isotropic, outpath=None):
+	def overlay_centroids_on_fused_image(self, *, fused_image_type, brain, stitching_path, centroids_path, downsampling, isotropic, outpath=None, cropping_coord=None, image_shape=None):
 
 		"""
 		- overlays centroids on coronal image
@@ -1804,17 +1804,25 @@ class StitchingXML():
 			fused_image_path = join(fused_image_dir, 'fused_coronal_' + out_res_string + '_CROPPED.tif')
 		
 		# get exact dimenesions of image
-		image_size = self.extract_image_size_from_meta_data(fused_image_path)
-		print('Output Image Size:', image_size)
-		image_shape = image_size[::-1]	
+		if image_shape is None:
+			image_shape = self.extract_image_size_from_meta_data(fused_image_path)
+			print('Output Image Shape:', image_shape)
+
+		# reverse image shape so z,y,x
+		image_shape = image_shape[::-1]	
 	
 		# get cropping info if needed
 		if 'cropped' in fused_image_type:
-			cropping_path = join(fused_image_dir, 'cropping_info_coronal.txt')
-			with open(cropping_path, 'r') as fp:
-				cropping_coord = int(fp.readline())
+		
+			# only try to read cropping coord if its not provided
+			if cropping_coord is not None:
+				cropping_path = join(fused_image_dir, 'cropping_info_coronal.txt')
+				with open(cropping_path, 'r') as fp:
+					cropping_coord = int(fp.readline())
 		else:
 			cropping_coord = 0
+
+		print('Cropping Coord:', cropping_coord)
 
 		# get all centroid files
 		csv_names = listdir(centroids_path)
