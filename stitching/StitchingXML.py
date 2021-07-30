@@ -1815,7 +1815,7 @@ class StitchingXML():
 		if 'cropped' in fused_image_type:
 		
 			# only try to read cropping coord if its not provided
-			if cropping_coord is not None:
+			if cropping_coord is None:
 				cropping_path = join(fused_image_dir, 'cropping_info_coronal.txt')
 				with open(cropping_path, 'r') as fp:
 					cropping_coord = int(fp.readline())
