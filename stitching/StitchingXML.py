@@ -1764,7 +1764,7 @@ class StitchingXML():
 		return volume_coords_from_target
 
 
-	def overlay_centroids_on_fused_image(self, *, fused_image_type, brain, stitching_path, centroids_path, downsampling, isotropic, outpath=None, cropping_coord=None, image_shape=None):
+	def overlay_centroids_on_fused_image(self, *, fused_image_type, brain, stitching_path, centroids_path, downsampling, isotropic, outpath=None, cropping_coord=None, image_shape=None, write_centroids=False, stop_volume=None):
 
 		"""
 		- overlays centroids on coronal image
@@ -1807,13 +1807,9 @@ class StitchingXML():
 		if image_shape is None:
 			image_shape = self.extract_image_size_from_meta_data(fused_image_path)
 			print('Output Image Shape:', image_shape)
-
-		# reverse image shape so z,y,x
-		image_shape = image_shape[::-1]	
 	
 		# get cropping info if needed
 		if 'cropped' in fused_image_type:
-		
 			# only try to read cropping coord if its not provided
 			if cropping_coord is None:
 				cropping_path = join(fused_image_dir, 'cropping_info_coronal.txt')
@@ -1834,6 +1830,10 @@ class StitchingXML():
 		for csv_name in csv_names:
 
 			volume_id = csv_name[:7]
+
+			if stop_volume == volume_id:
+				break
+
 			print(volume_id)
 
 			# load centroids
@@ -1858,20 +1858,27 @@ class StitchingXML():
 
 		print()
 		print('# Centroids: ', len(centroids_all))
+
 		
 		# create image
-		image = np.zeros(shape=image_shape, dtype=np.uint8)
+		image = np.zeros(shape=image_shape[::-1], dtype=np.uint8)
 
 		# clip to avoid out of bounds
-		centroids_all[:,0] = np.clip(centroids_all[:,0], 0, image_shape[2]-1)
+		centroids_all[:,0] = np.clip(centroids_all[:,0], 0, image_shape[0]-1)
 		centroids_all[:,1] = np.clip(centroids_all[:,1], 0, image_shape[1]-1)
-		centroids_all[:,2] = np.clip(centroids_all[:,2], 0, image_shape[0]-1)
+		centroids_all[:,2] = np.clip(centroids_all[:,2], 0, image_shape[2]-1)
 
 		# set all centroids
 		image[centroids_all[:,2],centroids_all[:,1],centroids_all[:,0]] = 255
 
-		# save
-		tif.imsave(join(outpath, 'centroids_overlayed_on_' + fused_image_type + '_' + out_res_string + '.tif') , image, imagej=True)
+		# write centroids to csv file
+		if write_centroids:
+			centroids_out_path = join(outpath, 'centroids_overlayed_on_' + fused_image_type + '_' + out_res_string + '.csv')
+			np.savetxt(centroids_out_path, centroids_all, fmt='%d')
+
+		# save image
+		image_out_path = join(outpath, 'centroids_overlayed_on_' + fused_image_type + '_' + out_res_string + '.tif')
+		tif.imsave(image_out_path , image, imagej=True)
 
 		
 
