@@ -1863,9 +1863,9 @@ class StitchingXML():
 		image = np.zeros(shape=image_shape, dtype=np.uint8)
 
 		# clip to avoid out of bounds
-		centroids_all[:,0] = np.clip(centroids_all[:,0], 0, image_size[0]-1)
-		centroids_all[:,1] = np.clip(centroids_all[:,1], 0, image_size[1]-1)
-		centroids_all[:,2] = np.clip(centroids_all[:,2], 0, image_size[2]-1)
+		centroids_all[:,0] = np.clip(centroids_all[:,0], 0, image_shape[2]-1)
+		centroids_all[:,1] = np.clip(centroids_all[:,1], 0, image_shape[1]-1)
+		centroids_all[:,2] = np.clip(centroids_all[:,2], 0, image_shape[0]-1)
 
 		# set all centroids
 		image[centroids_all[:,2],centroids_all[:,1],centroids_all[:,0]] = 255
