@@ -19,7 +19,7 @@ import math
 import tifffile as tif
 
 from sys import exit
-from os.path import dirname, join, realpath
+from os.path import dirname, join, realpath, splitext, exists
 from os import listdir
 from PIL import Image
 from PIL.TiffTags import TAGS
@@ -38,7 +38,7 @@ import params
 
 class StitchingXML():
 
-	def __init__(self, xml_path, *, sectioning, sectioning_interval=3):
+	def __init__(self, xml_path, *, sectioning=False, sectioning_interval=3):
 
 		# path of xml
 		self.xml_path = xml_path
@@ -84,6 +84,14 @@ class StitchingXML():
 		self.pairwise_overlaps_1d['y'], self.pairwise_overlaps_2d['y'] = self.arrange_overlaps_grid('y', 'pairwise')
 		self.pairwise_overlaps_1d['z'], self.pairwise_overlaps_2d['z'] = self.arrange_overlaps_grid('z', 'pairwise')
 
+		self.valid_fused_image_types = ['oblique', 'oblique_resliced', 'sagittal', 'sagittal_resliced', 'coronal', 'coronal_cropped']
+
+	@staticmethod
+	def normal_round(n):
+		if n - math.floor(n) < 0.5:
+			return math.floor(n)
+		return math.ceil(n)
+
 
 	@staticmethod
 	def extract_image_size_from_meta_data(image_path):
@@ -95,10 +103,16 @@ class StitchingXML():
 
 		with Image.open(image_path) as img:
 		    meta_dict = {TAGS[key] : img.tag[key] for key in img.tag.keys()}
+
+
 		
 		x_length = meta_dict['ImageWidth'][0]
 		y_length = meta_dict['ImageLength'][0]
-		z_length = int([x for x in meta_dict['ImageDescription'][0].split('\n') if 'images' in x][0].split('=')[-1])
+
+		if "\"shape\":" in meta_dict['ImageDescription'][0]:
+			z_length= int(meta_dict['ImageDescription'][0].split(':')[-1].split(',')[0][2:])
+		else:
+			z_length = int([x for x in meta_dict['ImageDescription'][0].split('\n') if 'images' in x][0].split('=')[-1])
 		
 		return (x_length, y_length, z_length)
 
@@ -164,14 +178,20 @@ class StitchingXML():
 		return ' '.join(matrix.flatten().astype(str))
 
 	
-	def calculate_output_res(self, isotropic, downsampling, fused_image_type):
+	def calculate_output_res(self, isotropic, z_res, fused_image_type):
 
 		"""
-		calculates output res based on isotropic and downsampling
+		calculates output res based on isotropic and z_res
 
 		"""
 
-		out_res = np.array(self.voxel_size)*downsampling
+		# amount downsampled in Z (all dimensions)
+		downsample_factor_z = z_res / self.voxel_size[2]
+	
+		# resolution for fused oblique full res
+		out_res = np.array(self.voxel_size)*downsample_factor_z
+	
+		# if isotropic then all will have z
 		if isotropic:
 			out_res = np.array([out_res[2]]*3)
 
@@ -681,7 +701,7 @@ class StitchingXML():
 
 				# get adjancet setup ids
 				setup_ids_adjacent = self.adjacent_volumes_setup_id(setup_id)
-	
+			
 				# get correlation for volumes
 				if dim == 'xy':
 					correlations_row.append(self.get_correlation(setup_id, setup_ids_adjacent['below right']))
@@ -725,8 +745,12 @@ class StitchingXML():
 		elif data_type == 'pairwise overlap':
 			data = self.pairwise_overlaps_2d[dim]
 
+		if len(data) == 0:
+			return ''
+
 		# index row on top
 		data_string += '     '
+		
 		for i in range(len(data[0])):
 			
 			index = len(data[0])-i
@@ -1165,13 +1189,15 @@ class StitchingXML():
 		return s
 
 
-	def estimate_overlaps(self, *, middle_percentage=.6, set_overlaps_and_save=False):
+	def estimate_overlaps(self, *, middle_percentage=.6, set_overlaps_and_save=False, overlap_constraints=None):
 
 		"""
 		- estimates overlap percentages to be used for fusion
 		- middle percentage specifies the percentage of overlaps to use		
 
 		"""
+		
+	
 
 		overlaps_dict = {}
 
@@ -1180,13 +1206,35 @@ class StitchingXML():
 			# overlaps will be a dict if sectioning
 			if self.sectioning and (dim == 'y' or dim == 'z'):
 				for sectioning_type, sectioning_type_overlaps in overlaps.items():
+
+					overlaps = np.array(sectioning_type_overlaps)
+
 					num_outliers = int(np.round(len(sectioning_type_overlaps)*middle_percentage/2))
 					middle_overlaps = sectioning_type_overlaps[num_outliers:len(sectioning_type_overlaps)-num_outliers]
 					key = dim + ' ' + sectioning_type
 					overlaps_dict[key] = np.array(middle_overlaps).mean().round(1)
 			else:
+
+				overlaps = np.array(overlaps)
+				print('Dim:', dim)
+				print('# Overlaps:', len(overlaps))
+				print('Mean: ', overlaps.mean().round(1))
+
+				if overlap_constraints is not None and dim != 'z':
+					low_const = overlap_constraints[dim]['center'] - overlap_constraints[dim]['delta']
+					if low_const < 0:
+						low_const = 0
+					high_const = overlap_constraints[dim]['center'] + overlap_constraints[dim]['delta']
+					overlaps = overlaps[np.logical_and(overlaps > low_const, overlaps < high_const)]
+					print('Constraints: ', low_const, '<->' , high_const)
+					print('# Overlaps (after constraint):', len(overlaps))
+					print('Mean: ', overlaps.mean().round(1))
+		
 				num_outliers = int(np.round(len(overlaps)*middle_percentage/2))
 				middle_overlaps = overlaps[num_outliers:len(overlaps)-num_outliers]
+				print('# Overlaps (keeping middle percentage):', len(middle_overlaps))
+				print('Mean: ', middle_overlaps.mean().round(1))
+
 				overlaps_dict[dim] = np.array(middle_overlaps).mean().round(1)
 
 		if set_overlaps_and_save:
@@ -1409,24 +1457,23 @@ class StitchingXML():
 		z_max = self.bbox_rounding(max(z_maxs))
 
 		# get lengths
-		x_length = x_max - x_min + 1
-		y_length = y_max - y_min + 1
-		z_length = z_max - z_min + 1
+		# this rounding should now perfectly match big stitcher
+
+		x_length = self.normal_round((x_max - x_min + 1)/downsampling)
+		y_length = self.normal_round((y_max - y_min + 1)/downsampling)
 
 		if preserve_anisotropy:
-			z_length = self.bbox_rounding(z_length/self.anisotropy_factor)
+			z_length_min = int(self.normal_round(math.floor((z_min / self.anisotropy_factor))))
+			z_length_max = int(self.normal_round(math.ceil((z_max / self.anisotropy_factor))))
+			z_length = self.normal_round((z_length_max - z_length_min + 1)/downsampling)
 			
-			# adding due to padding in front and back
-			z_length += 2
-
-		x_length = self.bbox_rounding(x_length/downsampling)
-		y_length = self.bbox_rounding(y_length/downsampling)
-		z_length = self.bbox_rounding(z_length/downsampling)
+		else:
+			z_length = self.normal_round((z_max - z_min + 1)/downsampling)
 			
 		return {'x':{'min':x_min,'max':x_max,'length':x_length},'y':{'min':y_min,'max':y_max,'length':y_length},'z':{'min':z_min,'max':z_max,'length':z_length}}
 
 
-	def define_bounding_boxes_for_parallel_fusion(self, grid_size, downsampling):
+	def define_bounding_boxes_for_parallel_fusion(self, grid_size, downsampling, out_path):
 
 		"""
 		- defines bounding boxes for parallel fusion
@@ -1452,12 +1499,12 @@ class StitchingXML():
 				bbox_mins = [x_coords[x_idx],y_coords[y_idx],fused_dimensions['z']['min']]
 				bbox_maxs = [x_coords[x_idx+1],y_coords[y_idx+1],fused_dimensions['z']['max']]
 
-				# need to add 1 to the min after first bbox
+				# need to add to the min after first bbox
 				if x_idx > 0:
-					bbox_mins[0] += downsampling
+					bbox_mins[0] += math.ceil(downsampling)
 
 				if y_idx > 0:
-					bbox_mins[1] += downsampling
+					bbox_mins[1] += math.ceil(downsampling)
 
 				bounding_boxes.append([bbox_mins, bbox_maxs])
 
@@ -1481,7 +1528,9 @@ class StitchingXML():
 			
 		# write xml
 		xml_dir = dirname(self.xml_path)
-		out_path = join(xml_dir, 'fusion_' + str(downsampling) + '_parallel','estimate_overlaps_bboxes_'+str(grid_size)+'.xml')
+		xml_name = self.xml_path.split('/')[-1][:-4]
+
+		out_path = join(out_path ,xml_name + '_bboxes_' + str(grid_size) + '.xml')
 		self.tree.write(out_path)
 		
 
@@ -1609,7 +1658,7 @@ class StitchingXML():
 
 
 
-	def stitching_coords_to_fused_image_coords(self, coords, *, fused_image_type, downsampling, isotropic, cropping_coord=0):
+	def stitching_coords_to_fused_image_coords(self, coords, *, fused_image_type, z_res, isotropic, cropping_coord=0):
 	
 		"""
 		- Converts Big Stitcher coords into coronal cropped coords
@@ -1619,8 +1668,7 @@ class StitchingXML():
 		"""
 
 		# check fused image type
-		valid_fused_image_types = ['oblique','coronal', 'coronal_cropped']
-		if fused_image_type not in valid_fused_image_types:
+		if fused_image_type not in self.valid_fused_image_types:
 			exit('ERROR: Fused Image Type must be one of the following: ' + str(valid_fused_image_types))
 
 		# fix 1d coords case
@@ -1634,6 +1682,7 @@ class StitchingXML():
 			shear_factor = params.SHEAR_FACTOR_ISOTROPIC / self.anisotropy_factor
 
 		# get dimensions of fused image
+		downsampling = z_res / self.voxel_size[2]
 		fused_dims = self.calculate_fused_dimensions(preserve_anisotropy=True, downsampling=downsampling)
 
 		# precalculate image sizes
@@ -1652,21 +1701,63 @@ class StitchingXML():
 		image_lengths_after_reslice_2 = image_lengths_after_shear[[1,2,0]]
 		image_lengths_after_rotate = image_lengths_after_reslice_2[[1,0,2]]
 
-
 		# define matrices
-		subtract_min_matrix = np.array([[1,0,0,-fused_dims['x']['min']],[0,1,0,-fused_dims['y']['min']],[0,0,1,-fused_dims['z']['min']],[0,0,0,1]])		
-		preserve_anisotropy_matrix = np.array([[1,0,0,0],[0,1,0,0],[0,0,1./self.anisotropy_factor,0],[0,0,0,1]])
-		downsample_fusion_matrix = np.array([[1./downsampling,0,0,0],[0,1./downsampling,0,0],[0,0,1./downsampling,0],[0,0,0,1]])
-		if isotropic:
-			downsample_to_isotropic_matrix = np.array([[1./self.anisotropy_factor,0,0,0],[0,1./self.anisotropy_factor,0,0],[0,0,1,0],[0,0,0,1]])
-		reslice_matrix = np.array([[0,1,0,0],[0,0,1,0],[1,0,0,0],[0,0,0,1]])
-		vertical_flip_matrix = np.array([[1,0,0,0],[0,-1,0,image_lengths_after_reslice[1]-1],[0,0,1,0],[0,0,0,1]])
+		subtract_min_matrix = np.array([
+			[1,0,0,-fused_dims['x']['min']],
+			[0,1,0,-fused_dims['y']['min']],
+			[0,0,1,-fused_dims['z']['min']],
+			[0,0,0,1]])	
+	
+		preserve_anisotropy_matrix = np.array([
+			[1,0,0,0],
+			[0,1,0,0],
+			[0,0,1./self.anisotropy_factor,0],
+			[0,0,0,1]])
+
+		downsample_fusion_matrix = np.array([
+			[1./downsampling,0,0,0],
+			[0,1./downsampling,0,0],
+			[0,0,1./downsampling,0],
+			[0,0,0,1]])
+
+		downsample_to_isotropic_matrix = np.array([
+			[1./self.anisotropy_factor,0,0,0],
+			[0,1./self.anisotropy_factor,0,0],
+			[0,0,1,0],
+			[0,0,0,1]])
+
+		reslice_matrix = np.array([
+			[0,1,0,0],
+			[0,0,1,0],
+			[1,0,0,0],
+			[0,0,0,1]])
+
+		vertical_flip_matrix = np.array([
+			[1,0,0,0],
+			[0,-1,0,image_lengths_after_reslice[1]-1],
+			[0,0,1,0],
+			[0,0,0,1]])
+
 		x_shear = shear_factor
 		shift_shear = -image_lengths_after_vertical_flip[1]/2 - shear_factor*image_lengths_after_vertical_flip[0]/2 + image_lengths_after_shear[1]/2 + 1
-		shear_matrix = np.array([[1,0,0,0],[x_shear, 1, 0, shift_shear],[0,0,1,0],[0,0,0,1]])
-		x_rotate = image_lengths_after_reslice_2[1] -1 
-		rotate_matrix =  np.array([[0,-1,0,x_rotate],[1,0,0,0],[0,0,1,0],[0,0,0,1]])
-		crop_shift_matrix = np.array([[1,0,0,0],[0,1,0,-cropping_coord],[0,0,1,0],[0,0,0,1]])
+		shear_matrix = np.array([
+			[1,0,0,0],
+			[x_shear, 1, 0, shift_shear],
+			[0,0,1,0],
+			[0,0,0,1]])
+
+		x_rotate = image_lengths_after_reslice_2[1] 
+		rotate_matrix =  np.array([
+			[0,-1,0,x_rotate],
+			[1,0,0,0],
+			[0,0,1,0],
+			[0,0,0,1]])
+
+		crop_shift_matrix = np.array([
+			[1,0,0,0],
+			[0,1,0,-cropping_coord],
+			[0,0,1,0],
+			[0,0,0,1]])
 
 		# append row of 1s
 		coords = coords.T	
@@ -1683,6 +1774,12 @@ class StitchingXML():
 		# create transformation matrix
 		if fused_image_type == 'oblique':
 			transform_matrix = np.eye(4)
+		if fused_image_type == 'oblique_resliced':
+			transform_matrix = vertical_flip_matrix @ reslice_matrix 
+		if fused_image_type == 'sagittal':
+			transform_matrix = shear_matrix @ vertical_flip_matrix @ reslice_matrix 
+		if fused_image_type == 'sagittal_resliced':
+			transform_matrix = reslice_matrix @ shear_matrix @ vertical_flip_matrix @ reslice_matrix 
 		elif fused_image_type == 'coronal':
 			transform_matrix = rotate_matrix @ reslice_matrix @ shear_matrix @ vertical_flip_matrix @ reslice_matrix 
 		elif fused_image_type == 'coronal_cropped':
@@ -1726,6 +1823,35 @@ class StitchingXML():
 		# save xml
 		self.save_xml('translate_to_grid')
 
+	def modify_image_loader_for_saving_as_h5(self):
+
+		"""
+		Modifies XML image loader to be compatible with H5
+
+		"""
+		
+		# get image loader element
+		imageLoader = self.root.find('SequenceDescription').find('ImageLoader')
+
+		# set attributes
+		imageLoader.set('format','bdv.hdf5')
+
+		# remove all children elements
+
+		children = []
+		for child in imageLoader:
+			children.append(child)
+		for child in children:
+			imageLoader.remove(child)
+
+		# add n5 child element
+		n5Child = ET.SubElement(imageLoader,'hdf5')
+		n5Child.set('type','relative')
+		n5Child.text = 'dataset.h5'
+
+		# save xml
+		self.save_xml('translate_to_grid')
+
 
 	def get_coords_in_adjacent_volume_from_pairwise_shift(self, source_setup, image_coords_source, target_setup):
 		
@@ -1764,7 +1890,7 @@ class StitchingXML():
 		return volume_coords_from_target
 
 
-	def overlay_centroids_on_fused_image(self, *, fused_image_type, brain, stitching_path, centroids_path, downsampling, isotropic, outpath=None, cropping_coord=None, image_shape=None, write_centroids=False, stop_volume=None):
+	def overlay_centroids_on_fused_image(self, *, fused_image_type, centroids_path, z_res, isotropic, outpath=None, cropping_coord=None, image_shape=None, write_centroids=False, stop_volume=None):
 
 		"""
 		- overlays centroids on coronal image
@@ -1773,17 +1899,18 @@ class StitchingXML():
 		"""
 
 		# check fused image type
-		valid_fused_image_types = ['oblique','coronal', 'coronal_cropped']
-		if fused_image_type not in valid_fused_image_types:
+		if fused_image_type not in self.valid_fused_image_types:
 			exit('ERROR: Fused Image Type must be one of the following: ' + str(valid_fused_image_types))
 
 		# calculate output res
-		_, out_res_string = self.calculate_output_res(isotropic, downsampling, fused_image_type)
+		_, out_res_string = self.calculate_output_res(isotropic, z_res, fused_image_type)
 
 		# set up paths
-		brain_stitching_path = join(stitching_path, brain)
-		fusion_path = join(brain_stitching_path, 'fusion_' + str(downsampling) + '_parallel')
+		dataset_path = '/'.join(self.xml_path.split('/')[:-1])
+		fusion_path = join(dataset_path, 'fusion_' + str(z_res) + 'um_parallel')
 
+
+		# logic to decide whether full res or isotropic paths
 		if isotropic:
 			fused_image_dir = join(fusion_path,'isotropic')
 		else:
@@ -1792,6 +1919,7 @@ class StitchingXML():
 			else:
 				fused_image_dir = join(fusion_path,'full_res')
 	
+		# by default output will be fused image directory
 		if outpath is None:
 			outpath = fused_image_dir
 
@@ -1802,23 +1930,30 @@ class StitchingXML():
 			fused_image_path = join(fused_image_dir, 'fused_coronal_' + out_res_string + '.tif')
 		elif fused_image_type == 'coronal_cropped':
 			fused_image_path = join(fused_image_dir, 'fused_coronal_' + out_res_string + '_CROPPED.tif')
+		else:
+			exit('Error: Need to add cases for other fused image types')
 		
 		# get exact dimenesions of image
 		if image_shape is None:
 			image_shape = self.extract_image_size_from_meta_data(fused_image_path)
 			print('Output Image Shape:', image_shape)
+
+
 	
 		# get cropping info if needed
 		if 'cropped' in fused_image_type:
 			# only try to read cropping coord if its not provided
 			if cropping_coord is None:
 				cropping_path = join(fused_image_dir, 'cropping_info_coronal.txt')
+
+				if not exists(cropping_path):
+					exit('Error: Cropping Info File Not Found')
+		
 				with open(cropping_path, 'r') as fp:
 					cropping_coord = int(fp.readline())
 		else:
 			cropping_coord = 0
 
-		print('Cropping Coord:', cropping_coord)
 
 		# get all centroid files
 		csv_names = listdir(centroids_path)
@@ -1848,10 +1983,19 @@ class StitchingXML():
 				centroids = centroids.reshape(1,-1)	
 
 			# transform to stitching coords
-			centroids = self.transform_volume_coords_to_stitching_coords(volume_id, centroids, ignore_stitching=True, shift_matrix=None)
+			centroids = self.transform_volume_coords_to_stitching_coords(
+					volume_id, 
+					centroids, 
+					ignore_stitching=True, 
+					shift_matrix=None)
 
 			# transform to coronal cropped
-			centroids = self.stitching_coords_to_fused_image_coords(centroids,fused_image_type=fused_image_type,downsampling=downsampling, isotropic=isotropic, cropping_coord=cropping_coord)
+			centroids = self.stitching_coords_to_fused_image_coords(
+					centroids,
+					fused_image_type=fused_image_type,
+					z_res=z_res, 
+					isotropic=isotropic, 
+					cropping_coord=cropping_coord)
 
 			centroids_all = np.vstack((centroids_all, centroids))
 
@@ -1878,7 +2022,44 @@ class StitchingXML():
 
 		# save image
 		image_out_path = join(outpath, 'centroids_overlayed_on_' + fused_image_type + '_' + out_res_string + '.tif')
-		tif.imsave(image_out_path , image, imagej=True)
+		tif.imsave(image_out_path , image)
+
+
+
+	def fused_coronal_cropped_coords_to_volume_id(self, coords, cropping_coord, downsampling=10):
+
+		"""
+		- takes coordinates from fused coronal cropped and gets volume id
+		- iteratively transforms all center coordinates in all volumes and then sees which is closes
+
+		"""
+	
+		# iterate through all setups and get bounding box in coronal cropped
+		min_volume = None
+		min_dist = np.Inf
+
+		center_coords = np.zeros(shape=(0,3), dtype=int)
+		for setup_id, setup_info in self.setups.items():
+
+			volume_size = setup_info['volume size']
+			center_volume_coords = (np.array(volume_size)/2).astype(int)
+			center_stitching_coords = self.transform_volume_coords_to_stitching_coords(setup_id, center_volume_coords, ignore_stitching=True, shift_matrix=None)
+			center_coords = np.vstack((center_coords, center_stitching_coords))
+
+
+		# get coords in coronal cropped	
+		center = self.stitching_coords_to_fused_image_coords(center_coords,
+				fused_image_type='coronal_cropped',
+				downsampling=10, 
+				isotropic=True, 
+				cropping_coord=cropping_coord)
+
+
+		dist = np.sqrt(((center - coords)**2).sum(axis=1))
+		setup_id = np.argmin(dist)
+		volume_id = self.setup_id_to_volume(setup_id)
+
+		return volume_id
 
 		
 
@@ -1907,32 +2088,6 @@ class StitchingXML():
 
 
 		
-	
-	
 
-	def fusedCoronalCoords_to_volume(self, coords):
-	
-		# iterate through all setups and get bounding box in coronal cropped
-		minVolume = None
-		minDist = np.Inf
-
-		for setupID in self.setupsAndRegistrations:
-			
-			volume = self.setupIDtoVolume(setupID)
-			volumeSize = np.array(self.getVolumeSize(setupID))
-			
-
-			# get center coords
-			center = utils.volumeCoords_to_fusedCoronalCoords(volume,volumeSize/2, self, downsampling=10)
-			print(center)
-			input()
-			dist = ((np.array(center) - np.array(coords))**2).sum()
-
-			if dist < minDist:
-				minDist = dist
-				minVolume = volume
-				
-
-		return minVolume
 					
 	
