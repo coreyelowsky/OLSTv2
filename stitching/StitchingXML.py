@@ -105,7 +105,6 @@ class StitchingXML():
 		    meta_dict = {TAGS[key] : img.tag[key] for key in img.tag.keys()}
 
 
-		
 		x_length = meta_dict['ImageWidth'][0]
 		y_length = meta_dict['ImageLength'][0]
 
@@ -200,7 +199,7 @@ class StitchingXML():
 
 		# create out res string
 		
-		out_res_string =[str(x) for x in out_res]
+		out_res_string = [str(x) for x in out_res.round(2)]
 		for i, x in enumerate(out_res_string):
 			if x.endswith('.0'):
 				out_res_string[i] = x[:-2]
@@ -269,6 +268,7 @@ class StitchingXML():
 		"""
 
 		return (z-1)*self.num_y_volumes + (y-1)
+
 		
 
 	def volume_is_border(self, setup_id):
@@ -1423,12 +1423,19 @@ class StitchingXML():
 		self.tree.write(out_path)
 
 
-	def calculate_fused_dimensions(self, preserve_anisotropy=False, downsampling=1):
+	def calculate_fused_dimensions(self, preserve_anisotropy=False, z_res=None, fuse_region=False, z_min=None, z_max=None, y_min=None, y_max=None):
 		
 		"""
 		Calculate dimensions of image in big stitcher for fusion
 
 		"""
+	
+		# default z_res
+		if z_res is None:
+			z_res = self.voxel_size[2]
+
+		# amount downsampled in Z (all dimensions)
+		downsampling = z_res / self.voxel_size[2]
 
 		x_mins, x_maxs = [], []
 		y_mins, y_maxs = [], []
@@ -1436,6 +1443,15 @@ class StitchingXML():
 		
 		# iterate through volumes 
 		for setup_id in self.setups:
+
+			# if fusing only region and volume not within region then continue
+			if fuse_region:
+				z = self.setup_id_to_z(setup_id)
+				y = self.setup_id_to_y(setup_id)
+				
+				if (not z_min <= z <= z_max) or (not y_min <= y <= y_max):
+					continue
+				
 
 			# get bounds of volume
 			bounds = self.get_volume_bounds_in_stitching_coordinates(setup_id)
@@ -1473,7 +1489,7 @@ class StitchingXML():
 		return {'x':{'min':x_min,'max':x_max,'length':x_length},'y':{'min':y_min,'max':y_max,'length':y_length},'z':{'min':z_min,'max':z_max,'length':z_length}}
 
 
-	def define_bounding_boxes_for_parallel_fusion(self, grid_size, downsampling, out_path):
+	def define_bounding_boxes_for_parallel_fusion(self, grid_size, downsampling, out_path, fuse_region=False, z_min=None, z_max=None, y_min=None, y_max=None):
 
 		"""
 		- defines bounding boxes for parallel fusion
@@ -1481,8 +1497,16 @@ class StitchingXML():
 	
 		"""
 
+
 		# get fused dimensions
-		fused_dimensions = self.calculate_fused_dimensions()
+		fused_dimensions = self.calculate_fused_dimensions(
+				fuse_region=fuse_region,
+				z_min=z_min,
+				z_max=z_max, 
+				y_min=y_min,
+				y_max=y_max)
+
+
 
 		# split each dimensions into grid size, z is fixed
 		x_coords = np.linspace(fused_dimensions['x']['min'], fused_dimensions['x']['max'], num=grid_size+1, dtype=int)
@@ -1658,7 +1682,17 @@ class StitchingXML():
 
 
 
-	def stitching_coords_to_fused_image_coords(self, coords, *, fused_image_type, z_res, isotropic, cropping_coord=0):
+	def stitching_coords_to_fused_image_coords(self, coords, *, 
+				fused_image_type, 
+				z_res=None, 
+				isotropic=False, 
+				cropping_coord=0, 
+				preserve_anisotropy=True,
+				region=False,
+				z_min=None,
+				z_max=None,
+				y_min=None,
+				y_max=None):
 	
 		"""
 		- Converts Big Stitcher coords into coronal cropped coords
@@ -1666,6 +1700,8 @@ class StitchingXML():
 		- coords should be nx3 matrix
 
 		"""
+		if z_res is None:
+			z_res = self.voxel_size[2]
 
 		# check fused image type
 		if fused_image_type not in self.valid_fused_image_types:
@@ -1683,7 +1719,7 @@ class StitchingXML():
 
 		# get dimensions of fused image
 		downsampling = z_res / self.voxel_size[2]
-		fused_dims = self.calculate_fused_dimensions(preserve_anisotropy=True, downsampling=downsampling)
+		fused_dims = self.calculate_fused_dimensions(preserve_anisotropy=True, z_res=z_res)
 
 		# precalculate image sizes
 		fused_lengths = np.array([fused_dims['x']['length'],fused_dims['y']['length'],fused_dims['z']['length']])
@@ -1765,7 +1801,11 @@ class StitchingXML():
 		coords = np.vstack((coords,ones))
 
 		# get coordinate in fused oblique
-		coords = downsample_fusion_matrix @ preserve_anisotropy_matrix  @ subtract_min_matrix @ coords
+		if preserve_anisotropy:
+			coords = downsample_fusion_matrix @ preserve_anisotropy_matrix  @ subtract_min_matrix @ coords
+		else:
+			coords = downsample_fusion_matrix @ subtract_min_matrix @ coords
+	
 
 		# make isotropic
 		if isotropic:
@@ -1905,6 +1945,7 @@ class StitchingXML():
 		# calculate output res
 		_, out_res_string = self.calculate_output_res(isotropic, z_res, fused_image_type)
 
+
 		# set up paths
 		dataset_path = '/'.join(self.xml_path.split('/')[:-1])
 		fusion_path = join(dataset_path, 'fusion_' + str(z_res) + 'um_parallel')
@@ -1961,7 +2002,7 @@ class StitchingXML():
 		# array to hold centroids
 		centroids_all = np.zeros(shape=(0,3), dtype=int)
 
-		# load all centroids
+		# iterate through all csvs for each volume
 		for csv_name in csv_names:
 
 			volume_id = csv_name[:7]
@@ -1983,21 +2024,25 @@ class StitchingXML():
 				centroids = centroids.reshape(1,-1)	
 
 			# transform to stitching coords
-			centroids = self.transform_volume_coords_to_stitching_coords(
+			centroids_stitching_coords = self.transform_volume_coords_to_stitching_coords(
 					volume_id, 
 					centroids, 
 					ignore_stitching=True, 
 					shift_matrix=None)
 
-			# transform to coronal cropped
-			centroids = self.stitching_coords_to_fused_image_coords(
-					centroids,
-					fused_image_type=fused_image_type,
-					z_res=z_res, 
-					isotropic=isotropic, 
-					cropping_coord=cropping_coord)
 
-			centroids_all = np.vstack((centroids_all, centroids))
+			centroids_all = np.vstack((centroids_all, centroids_stitching_coords))
+
+		
+		# transform to coronal cropped
+		print()
+		print('Transforming Stitching Coords...')
+		centroids_all = self.stitching_coords_to_fused_image_coords(
+				centroids_all,
+				fused_image_type=fused_image_type,
+				z_res=z_res, 
+				isotropic=isotropic, 
+				cropping_coord=cropping_coord)
 
 
 		print()
@@ -2005,6 +2050,8 @@ class StitchingXML():
 
 		
 		# create image
+		print()
+		print('Allocating Overlay Image...')
 		image = np.zeros(shape=image_shape[::-1], dtype=np.uint8)
 
 		# clip to avoid out of bounds
@@ -2017,22 +2064,56 @@ class StitchingXML():
 
 		# write centroids to csv file
 		if write_centroids:
+			print()
+			print('Saving Centroids...')
 			centroids_out_path = join(outpath, 'centroids_overlayed_on_' + fused_image_type + '_' + out_res_string + '.csv')
 			np.savetxt(centroids_out_path, centroids_all, fmt='%d')
 
 		# save image
+		print()
+		print('Saving Overlay Image...')
 		image_out_path = join(outpath, 'centroids_overlayed_on_' + fused_image_type + '_' + out_res_string + '.tif')
 		tif.imsave(image_out_path , image)
 
 
 
-	def fused_coronal_cropped_coords_to_volume_id(self, coords, cropping_coord, downsampling=10):
+	def fused_coronal_cropped_coords_to_volume_id(self, coords, fusion_path):
 
 		"""
 		- takes coordinates from fused coronal cropped and gets volume id
-		- iteratively transforms all center coordinates in all volumes and then sees which is closes
+		- iteratively transforms all center coordinates in all volumes and then sees which is closest
 
 		"""
+		
+		# make sure fusion path exists
+		if not exists(fusion_path):
+			exit('Error: Fusion Path does not exist - ' + fusion_path)
+
+		# if fusion was only for a region, then need to extract volume bounds
+		region = False
+		z_min, z_max, y_min, y_max = [None]*4
+		if 'region' in fusion_path:
+			z = fusion_path.split('_')[-2:][0][1:].split('-')
+			y = fusion_path.split('_')[-2:][1][1:].split('-')
+			z_min, z_max = int(z[0]), int(z[1])
+			y_min = int(y[0])
+			if y[1][-1] == '/':
+				y_max = int(y[1][:-1])
+			else:
+				y_max = int(y[1])
+			region = True
+
+		# extract z res
+		z_res = float(fusion_path.split('/')[-2].split('_')[1][:-2])
+			
+
+		# make sure cropping info exists
+		cropping_info_path = join(fusion_path, 'isotropic', 'cropping_info_coronal.txt')
+		if not exists(cropping_info_path):
+			exit('Error: cropping info does not exists...')
+
+		with open(cropping_info_path, 'r') as fp:
+			cropping_coord = int(fp.readline())
 	
 		# iterate through all setups and get bounding box in coronal cropped
 		min_volume = None
@@ -2048,16 +2129,27 @@ class StitchingXML():
 
 
 		# get coords in coronal cropped	
-		center = self.stitching_coords_to_fused_image_coords(center_coords,
+		center = self.stitching_coords_to_fused_image_coords(
+				center_coords,
 				fused_image_type='coronal_cropped',
-				downsampling=10, 
+				z_res=z_res, 
 				isotropic=True, 
-				cropping_coord=cropping_coord)
+				cropping_coord=cropping_coord,
+				region=region,
+				z_min=z_min,
+				z_max=z_max,
+				y_min=y_min,
+				y_max=y_max)
 
 
 		dist = np.sqrt(((center - coords)**2).sum(axis=1))
 		setup_id = np.argmin(dist)
 		volume_id = self.setup_id_to_volume(setup_id)
+
+		if region:
+			z = self.setup_id_to_z(setup_id) + z_min - 1
+			y = self.setup_id_to_y(setup_id) + y_min - 1
+			volume_id = self.zy_to_volume(z,y)
 
 		return volume_id
 
