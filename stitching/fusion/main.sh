@@ -7,7 +7,7 @@
 ####################################
 
 # input directory
-export input_data_path=/grid/osten/data_norepl/qi/data/PV/PV-GFP-M2/
+export input_data_path=/grid/osten/data_norepl/qi/data/PV/PV-GFP-M8/
 
 # if true then assumes that grid of fused images have already
 # been created and will start at merge step
