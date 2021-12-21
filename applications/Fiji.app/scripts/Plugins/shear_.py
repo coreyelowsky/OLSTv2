@@ -42,7 +42,7 @@ resample=False
 antialias=False
 
 # run affine transform
-outputImage = affiner.run(image,transform,scheme,adjust,resample,antialias);
+outputImage = affiner.run(image, transform, scheme, adjust, resample, antialias);
 
 # wont display (source code modified)
 # sets correct properties for image

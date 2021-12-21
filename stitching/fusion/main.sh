@@ -7,7 +7,7 @@
 ####################################
 
 # input directory
-export input_data_path=/grid/osten/data_norepl/qi/data/PV/PV-GFP-M8/
+export input_data_path=/grid/osten/data_norepl/qi/data/THY1/THY1-GFP-M1/
 
 # if true then assumes that grid of fused images have already
 # been created and will start at merge step
@@ -23,7 +23,7 @@ export start_from_oblique_to_coronal=false
 export compute_full_res_fused_image=false
 
 # output resolution for z
-export out_res_z=5
+export out_res_z=25
 
 # grid dimensions for parallel fusion
 # e.g. if grid_size=2, will be a 2x2 grid -> 4 jobs
@@ -192,9 +192,14 @@ then
 		mkdir -p $output_data_path "$output_data_path"logs
 
 		# copy fiji
-		cp -r $fiji_path $output_data_path
 		export imagej_exe=${output_data_path}Fiji.app/ImageJ-linux64
-		chmod +x $imagej_exe
+		if [ ! -d ${output_data_path}Fiji.app ]; 
+		then
+			echo "Copying Fiji..."
+			cp -r $fiji_path $output_data_path
+			chmod +x $imagej_exe
+		fi
+
 		echo "ImageJ Path: ${imagej_exe}"
 
 		if [ $start_from_merge = true -o $start_from_oblique_to_coronal = true  ];
@@ -203,9 +208,8 @@ then
 			# can just start from merge if fusion parallel is complete
 			# and you dont want to run again
 
-			# dont need nohup here because qsub merge job should be submitted almost immediately
-
-			$wait_for_jobs_to_finish_merge_bash_script
+			echo ""
+			nohup $wait_for_jobs_to_finish_merge_bash_script > "$output_data_path"logs/nohup_merge_skip_fusion.out &
 
 		else
 
@@ -233,6 +237,7 @@ then
 			# modify dataset path in xml
 			xml_name_no_ext=`echo "${xml_file_name%.*}"`
 			sed -i 's/dataset/\.\.\/dataset/' "${output_data_path}${xml_name_no_ext}_bboxes_${grid_size}.xml"
+			echo ""
 
 			# update memory and threads for imagej
 			$imagej_exe --headless --console -macro $update_imagej_memory_macro "$fusion_memory?$imagej_threads"
