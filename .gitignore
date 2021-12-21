@@ -1,2 +1,5 @@
+# pychache files
 **/__pycache__
+
+# all directories inside markup
 markup/*/

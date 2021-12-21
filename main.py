@@ -71,7 +71,8 @@ def check_errors():
 		
 if __name__ == '__main__':
 
-	check_errors()
+	pass
+	#check_errors()
 
 	#overlay()
 	"""
