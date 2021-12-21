@@ -71,7 +71,7 @@ def check_errors():
 		
 if __name__ == '__main__':
 
-	xiaoli = 'hello'
+	xiaoli = 'corey'
 	#check_errors()
 
 	#overlay()
