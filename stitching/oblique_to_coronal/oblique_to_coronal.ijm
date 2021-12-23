@@ -5,7 +5,7 @@ function my_round(value, n){
 	value = round(value);
 	value = value / pow(10,n);
 
-	return value
+	return value;
 }
 
 
@@ -25,6 +25,9 @@ shear_file_path = args[2];
 isotropic = args[3];
 input_orientation = args[4];
 from_full_res = args[5];
+res_x = parseFloat(args[6]);
+res_y = parseFloat(args[7]);
+res_z = parseFloat(args[8]);
 
 print("Parameters:");
 print("Input Image: " + input_data_path);
@@ -33,6 +36,10 @@ print("Shear File: " + shear_file_path);
 print("Isotropic: " + isotropic);
 print("Input Orientation: " + input_orientation);
 print("From Full Res: " + from_full_res);
+print("Res X: " + res_x);
+print("Res Y: " + res_y);
+print("Res Z: " + res_z);
+
 
 if(isotropic == "true"){
 	output_data_path = input_data_path + "isotropic/";	
@@ -58,7 +65,6 @@ print("Input Image Path: " + input_image_path_full);
 // open image
 print("Opening Image: " + input_image_path_full);
 open(input_image_path_full);
-getPixelSize(unit, res_x, res_y, res_z);
 res_x = my_round(res_x, 2);
 res_y = my_round(res_y, 2);
 res_z = my_round(res_z, 2);
@@ -66,7 +72,7 @@ print("Resolution: " + res_x + " " + res_y + " " + res_z);
 print("");
 
 // downsample to isotropic resolution
-if(isotropic == "true" && from_full_res == "true" ){
+if(isotropic == "true" && from_full_res == "true"){
 	downsample_scale_factor = res_x / res_z;
 
 	res_x = res_z;
@@ -97,7 +103,7 @@ print("");
 // close previous windows
 selectWindow("fused_oblique_" + res_x + "x" + res_y + "x" + res_z + ".tif");
 close();
-selectWindow("fused_oblique_resliced_"+ res_y + "x" + res_z + "x" + res_x+".tif");
+selectWindow("fused_oblique_resliced_"+ res_y + "x" + res_z + "x" + res_x + ".tif");
 
 
 // shear

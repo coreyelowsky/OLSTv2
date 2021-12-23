@@ -7,25 +7,26 @@ echo "###############################"
 echo ""
 
 # move log file
-mv "$cur_dir"*merge_fusion_${out_res_z}um.* "$output_data_path"logs
+mv "$cur_dir"*merge_fusion_${out_res_z}um.* $log_path
 
 
 if [ $compute_full_res_fused_image = true ]
 then
-	# python script to merge volumes
-	python $merge_fused_volumes_python_script $output_data_path $downsampling $grid_size $out_res $compute_full_res_fused_image
 
-	# update resolution of merged fused image
-	$imagej_exe --headless --console -macro $update_fused_image_resolution_macro "$output_data_path?$out_res_x?$out_res_y?$out_res_z"
+	export input_image_path=${output_data_path}
+	export output_image_path=${output_data_path}	
+
+	# python script to merge volumes
+	python $merge_fused_volumes_python_script $input_image_path $output_image_path $downsampling $grid_size $out_res 
 
 else
 
 	mkdir -p $output_data_path"isotropic"
 
-	# python script to merge volumes
-	python $merge_fused_volumes_python_script $output_data_path $downsampling $grid_size $out_res_isotropic $compute_full_res_fused_image
+	export input_image_path=${output_data_path}isotropic/
+	export output_image_path=${output_data_path}isotropic/
 
-	# update resolution of merged fused image
-	$imagej_exe --headless --console -macro $update_fused_image_resolution_macro "${output_data_path}isotropic/?${out_res_z}?${out_res_z}?${out_res_z}"
+	# python script to merge volumes
+	python $merge_fused_volumes_python_script $input_image_path $output_image_path $downsampling $grid_size $out_res_isotropic
 
 fi

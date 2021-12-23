@@ -14,16 +14,11 @@ print('###################')
 sys.stdout.flush()
 
 # parse arguments
-fusion_path = sys.argv[1]
-downsampling = sys.argv[2]
-grid_size = sys.argv[3]
-out_res = sys.argv[4]
-compute_full_res_fused_image = sys.argv[5]
-
-if compute_full_res_fused_image == 'true':
-	compute_full_res_fused_image = True
-else:
-	compute_full_res_fused_image = False
+input_image_path = sys.argv[1]
+output_image_path = sys.argv[2]
+downsampling = sys.argv[3]
+grid_size = sys.argv[4]
+out_res = sys.argv[5]
 
 # parse res
 # if integer make ints
@@ -43,7 +38,7 @@ vertical_volumes = []
 for i in range(1, int(grid_size)**2 + 1):
 
 	# get image path
-	image_path = join(fusion_path, 'fused_' + str(i) + '.tif')
+	image_path = join(input_image_path, 'fused_' + str(i) + '.tif')
 	
 	# load image
 	print('Loading:', image_path)
@@ -79,30 +74,18 @@ for i, vertical_volume in enumerate(vertical_volumes):
 
 # remove volumes
 for i in range(1, int(grid_size)**2 + 1):
-	remove(join(fusion_path,'fused_'+str(i)+'.tif'))
+	remove(join(input_image_path,'fused_'+str(i)+'.tif'))
 
 
 # save fused volume
 print('Saving Fused Volume...')
 
-
 out_res = 'x'.join([str(x) for x in res])
 print('Out Res:', out_res)
 
-if compute_full_res_fused_image:
-	out_path = join(fusion_path,'fused_oblique_' + out_res + '.tif')
-else:
-	out_path = join(fusion_path,'isotropic', 'fused_oblique_'+out_res +'.tif')
+out_path = join(output_image_path,'fused_oblique_' + out_res + '.tif')
 
 print('Out Path:', out_path)
+tif.imwrite(out_path, fused_volume, imagej=True, resolution=(1./res[0], 1./res[1]), metadata={'unit':'um', 'spacing':res[2], 'axes':'ZYX'})
 
-tif.imwrite(out_path, fused_volume, imagej=True, resolution=(1./res[0], 1./res[1]),metadata={'unit':'um','spacing':res[2],'channels':1})
-
-
-
-
-
-
-
-
-
+print('Done writing image...')

@@ -9,6 +9,10 @@
 # input directory
 export input_data_path=/grid/osten/data_norepl/qi/data/THY1/THY1-GFP-M1/
 
+# if true then assumes the image has been already fused
+# and will start from downsample
+export start_from_downsample=false
+
 # if true then assumes that grid of fused images have already
 # been created and will start at merge step
 export start_from_merge=false
@@ -27,7 +31,7 @@ export out_res_z=25
 
 # grid dimensions for parallel fusion
 # e.g. if grid_size=2, will be a 2x2 grid -> 4 jobs
-export grid_size=10
+export grid_size=20
 
 # xml filename
 export xml_file_name=estimate_overlaps.xml
@@ -63,7 +67,9 @@ export full_res_transformations=false
 # this is needed for oblique to coronal orientation
 export input_orientation=coronal
 
-# memory
+# memory for fusion jobs
+# this does not need to be increased for larger datasets
+# since big stitcher saves images on the fly
 export fusion_memory=10
 
 # threads per job
@@ -81,7 +87,16 @@ echo "Fusion"
 echo "######"
 echo ""
 
-echo "Load Modules to use correct python...."
+
+# make sure input path ends in /
+if [[ ! $input_data_path == */ ]];
+then
+	echo "Error: input_data_path must end in /"
+	echo ""
+	exit
+fi
+
+echo "Load Modules to use correct python version...."
 module load EBModules
 module load Python/3.8.6-GCCcore-10.2.0
 
@@ -93,6 +108,8 @@ export base_dir=$(dirname $0)/../../
 
 # set up script paths
 export define_bounding_boxes_script="$base_dir"stitching/fusion/define_bounding_boxes.py
+export process_fusion_script="$base_dir"stitching/fusion/process_fusion.sh
+
 export merge_fused_volumes_bash_script="$base_dir"stitching/fusion/merge_fused_volumes.sh
 export merge_fused_volumes_python_script="$base_dir"stitching/fusion/merge_fused_volumes.py
 export fusion_parallel_script="$base_dir"stitching/fusion/fusion_parallel.sh
@@ -107,10 +124,11 @@ export fusion_macro="$base_dir"stitching/fusion/fusion.ijm
 export oblique_to_coronal_macro="$base_dir"stitching/oblique_to_coronal/oblique_to_coronal.ijm
 export crop_fused_image_script="$base_dir"stitching/oblique_to_coronal/crop_fused_image.py
 export define_bounding_box_macro="$base_dir"stitching/fusion/define_bounding_box.ijm
+export downsample_script="$base_dir"stitching/fusion/downsample.sh
+export downsample_macro="$base_dir"stitching/fusion/downsample.ijm
 
 # import parameters
 source "$base_dir"stitching/stitching_params.sh
-
 
 # figure out if running on cluster and export paths
 is_running_on_cluster $HOSTNAME
@@ -130,7 +148,6 @@ downsampling=$(echo ${downsampling}  | sed '/\./ s/\.\{0,1\}0\{1,\}$//')
 
 # rules for resolution name is first convert to float with 2 decimals
 # and then remove trailing zeros
-
 export out_res_x=$(echo "$res_x * $downsampling" | bc -l | xargs printf "%.2f" | sed '/\./ s/\.\{0,1\}0\{1,\}$//')
 export out_res_y=$(echo "$res_y * $downsampling" | bc -l | xargs printf "%.2f" | sed '/\./ s/\.\{0,1\}0\{1,\}$//')
 export out_res=$out_res_x"x"$out_res_y"x"$out_res_z
@@ -146,8 +163,7 @@ echo "Oblique -> Coronal: $oblique_to_coronal"
 echo "Oblique -> Coronal (full res): $full_res_transformations"
 echo "Output Resolution: $out_res"
 echo "Output Resolution (isotropic): $out_res_isotropic"
-echo ""
-echo "Fusion Memory (upper bound): $fusion_memory"G
+echo "Fusion Memory: $fusion_memory"G
 echo "Threads Per Job: $threads_per_job"
 echo ""
 
@@ -167,7 +183,7 @@ fi
 export memory_per_thread_fusion=$((fusion_memory/threads_per_job+1))
 echo "Memory per Thread: $memory_per_thread_fusion"G
 
-
+# if running on cluster check if parallel or not
 if [ $cluster = true ];
 then
 
@@ -176,88 +192,80 @@ then
 		
 		echo ""
 		echo "Running in parallel..."
+		echo ""
 
 		# create output directory 
 		if [ $fuse_region = true ];
 		then
-			
-			# create output directory
 			export region_id="region_z${z_min}-${z_max}_y${y_min}-${y_max}"
-			export output_data_path="${input_data_path}fusion_${out_res_z}um_parallel_${region_id}/"
-			
+			export output_data_path="${input_data_path}fusion_${out_res_z}um_${region_id}/"
 		else
-			export output_data_path="$input_data_path"fusion_"${out_res_z}"um_parallel/
+			export output_data_path="${input_data_path}fusion_${out_res_z}um/"
 		fi
 
-		mkdir -p $output_data_path "$output_data_path"logs
+		# make output directory and logs directory
+		export log_path="${output_data_path}logs/"
+		mkdir -p $output_data_path $log_path
 
-		# copy fiji
+		# copy fiji (always recopy even if it exists already)
+		echo "Copying Fiji..."
 		export imagej_exe=${output_data_path}Fiji.app/ImageJ-linux64
-		if [ ! -d ${output_data_path}Fiji.app ]; 
-		then
-			echo "Copying Fiji..."
-			cp -r $fiji_path $output_data_path
-			chmod +x $imagej_exe
-		fi
-
+		cp -r $fiji_path $output_data_path
+		chmod +x $imagej_exe
 		echo "ImageJ Path: ${imagej_exe}"
 
-		if [ $start_from_merge = true -o $start_from_oblique_to_coronal = true  ];
+		# if any skip processing flags are true then go straight to next script and exit
+		if [ $start_from_downsample = true -o $start_from_merge = true -o $start_from_oblique_to_coronal = true ];
 		then
-			# this is for skip processing
-			# can just start from merge if fusion parallel is complete
-			# and you dont want to run again
-
 			echo ""
-			nohup $wait_for_jobs_to_finish_merge_bash_script > "$output_data_path"logs/nohup_merge_skip_fusion.out &
-
-		else
-
-			echo ""
-			echo "Write Parameters..."
-			echo "" >> "$output_data_path"params_fusion.txt
-			echo "Input Data Path: $output_data_path" >> "$output_data_path"params_fusion.txt
-			echo "XML Filename: $xml_file_name" >> "$output_data_path"params_fusion.txt
-			echo "Grid Size:" "$grid_size"x"$grid_size" >> "$output_data_path"params_fusion.txt
-			echo "Downsampling: $downsampling" >> "$output_data_path"params_fusion.txt
-			echo "Pixel Type: $pixel_type" >> "$output_data_path"params_fusion.txt
-			echo "Interpolation: $interpolation" >> "$output_data_path"params_fusion.txt
-			echo "blend: $blend" >> "$output_data_path"params_fusion.txt
-			echo "" >> "$output_data_path"params_fusion.txt
-			echo ""
-
-			# job name
-			export job_name="fusion_${out_res_z}um_parallel"
-			echo "Job Name: $job_name"
-			echo ""
-
-			# run python script to create bounding boxes and save xml
-			python $define_bounding_boxes_script $input_data_path $xml_file_name $grid_size $downsampling $output_data_path $fuse_region $z_min $z_max $y_min $y_max
-
-			# modify dataset path in xml
-			xml_name_no_ext=`echo "${xml_file_name%.*}"`
-			sed -i 's/dataset/\.\.\/dataset/' "${output_data_path}${xml_name_no_ext}_bboxes_${grid_size}.xml"
-			echo ""
-
-			# update memory and threads for imagej
-			$imagej_exe --headless --console -macro $update_imagej_memory_macro "$fusion_memory?$imagej_threads"
-
-			# run job on cluster
-			qsub_output=`qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread_fusion*2))"G -t 1-$num_jobs $fusion_parallel_script`
-
-			# parse qsub output to get job id
-			export job_id=`echo $qsub_output | awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}'`
-			echo "Job ID: $job_id"
-			echo ""
-
-			# call merge volumes bash script to wait until all jobs are done
-			# use nohup and run in background so if terminal is closed, script will persist
-			echo "Wait for all fused volumes to complete and then merge..."
-			echo ""
-
-			nohup $wait_for_jobs_to_finish_merge_bash_script > "$output_data_path"logs/nohup_merge.out &
+			nohup $process_fusion_script > "${log_path}process_fusion.out" &
+			exit
 		fi
 
+		echo ""
+		echo "Write Parameters..."
+		echo "" >> "$output_data_path"params_fusion.txt
+		echo "Input Data Path: $output_data_path" >> "$output_data_path"params_fusion.txt
+		echo "XML Filename: $xml_file_name" >> "$output_data_path"params_fusion.txt
+		echo "Grid Size:" "$grid_size"x"$grid_size" >> "$output_data_path"params_fusion.txt
+		echo "Downsampling: $downsampling" >> "$output_data_path"params_fusion.txt
+		echo "Pixel Type: $pixel_type" >> "$output_data_path"params_fusion.txt
+		echo "Interpolation: $interpolation" >> "$output_data_path"params_fusion.txt
+		echo "blend: $blend" >> "$output_data_path"params_fusion.txt
+		echo "" >> "$output_data_path"params_fusion.txt
+		echo ""
+
+		# job name
+		export job_name="fusion_${out_res_z}um_parallel"
+		echo "Job Name: $job_name"
+		echo ""
+
+		# run python script to create bounding boxes and save xml
+		python $define_bounding_boxes_script $input_data_path $xml_file_name $grid_size $downsampling $output_data_path $fuse_region $z_min $z_max $y_min $y_max
+
+		# modify dataset path in xml
+		xml_name_no_ext=`echo "${xml_file_name%.*}"`
+		sed -i 's/dataset/\.\.\/dataset/' "${output_data_path}${xml_name_no_ext}_bboxes_${grid_size}.xml"
+		echo ""
+
+		# update memory and threads for imagej
+		$imagej_exe --headless --console -macro $update_imagej_memory_macro "$fusion_memory?$imagej_threads"
+
+		# run job on cluster
+		qsub_output=`qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread_fusion*2))"G -t 1-$num_jobs $fusion_parallel_script`
+
+		# parse qsub output to get job id
+		export job_id=`echo $qsub_output | awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}'`
+		echo "Job ID: $job_id"
+		echo ""
+
+		# call merge volumes bash script to wait until all jobs are done
+		# use nohup and run in background so if terminal is closed, script will persist
+		echo "Wait for all fused volumes to complete and then merge..."
+		echo ""
+
+		nohup $process_fusion_script > "${log_path}process_fusion.out" &
+	
 	else
 
 		echo ""
@@ -313,20 +321,9 @@ then
 
 
 else
-
-
-	#### NEED TO DEVELOP ####
-
-	echo "Need to develop.."
-
-	# update memory and threads for imagej
-	#$imagej_exe --headless --console -macro $update_imagej_macrk_memory "$memory_total?$imagej_threads"
-
-	# run fusion
-	#$imagej_exe --headless --console -macro $fusion_macro "$input_data_path?$xml_file_name?$downsampling?$pixel_type?$interpolation?$blend"
-
-	#fused_target_name=fused_oblique_"$out_res_x"x"$out_res_y"x"$out_res_z".tif
-	#mv "$input_data_path"fused_tp_0_ch_0.tif $input_data_path$fused_target_name
-
+	echo "Not Running on Cluster....."
+	echo ""
+	echo "Need to Develop..."
+	echo ""
 fi
 

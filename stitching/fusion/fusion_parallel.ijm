@@ -43,7 +43,6 @@ interpolation = args[5];
 blend = args[6];
 bbox_id = args[7];
 grid_size = args[8];
-compute_full_res_image = args[9];
 
 print("##########");
 print("Parameters");
@@ -56,7 +55,6 @@ print("Downsampling: " + downsampling);
 print("Pixel Type: " + pixel_type);
 print("Interpolation: " + interpolation);
 print("Blend: " + blend);
-print("Compute Full Res Image: " + compute_full_res_image);
 print("");
 
 print("Fuse Dataset...");
@@ -77,38 +75,6 @@ run("Fuse dataset ...", "select="+xml_full_path+" process_angle=[All angles] pro
 
 // full path to image that big stitcher saves after fusion
 output_image_path_full = output_data_path + bbox_id + "_fused_tp_0_ch_0.tif";
-
-// downsample to isotropic
-if(compute_full_res_image == "false"){
-
-	print("");
-	print("#######################");
-	print("Downsample To Isotropic");
-	print("#######################");
-	print("");
-
-	// open image
-	print("Opening Image: " + output_image_path_full);
-	open(output_image_path_full);
-	getPixelSize(unit, res_x, res_y, res_z);
-	res_x = my_round(res_x, 2);
-	res_y = my_round(res_y, 2);
-	res_z = my_round(res_z, 2);
-	print("Resolution: " + res_x + " " + res_y + " " + res_z); 
-	print("");
-
-	// downsample to isotropic resolution
-	downsample_scale_factor = res_x / res_z;
-
-	print("Downsample to Isotropic...");
-	print("Downsample Factor: " + downsample_scale_factor);
-	run("Scale...", "x="+downsample_scale_factor+" y="+downsample_scale_factor+" z=1.0 interpolation=Bilinear average process create");
-
-	print("Saving...");
-	saveAs("Tiff", output_image_path_full);
-	print("");
-
-}
 
 // rename 
 File.rename(output_image_path_full, output_data_path + "fused_" + bbox_id + ".tif")
