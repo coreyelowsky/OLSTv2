@@ -7,7 +7,7 @@
 ####################################
 
 # input directory
-export input_data_path=/grid/osten/data_norepl/qi/data/PV/PV-GFP-M4/
+export input_data_path=/grid/osten/data_norepl/qi/data/OXT/OXT-IHC-M2/downsample2/
 
 # if true then assumes the image has been already fused
 # and will start from downsample
@@ -19,7 +19,7 @@ export start_from_merge=false
 
 # if true then assumes the image has been already fused
 # and merged and will start from oblique to coronal
-export start_from_oblique_to_coronal=false
+export start_from_oblique_to_coronal=true
 
 # if true will save full res fused image
 export merge_full_res_fused_image=false
@@ -29,7 +29,7 @@ export out_res_z=5
 
 # grid dimensions for parallel fusion
 # e.g. if grid_size=2, will be a 2x2 grid -> 4 jobs
-export grid_size=31
+export grid_size=20
 
 # xml filename
 export xml_file_name=estimate_overlaps
@@ -76,7 +76,7 @@ export fusion_memory=10
 export threads_per_job=12
 
 # priority for fusion job
-export priority=-1
+export priority=-2
 
 #####################################
 #####################################
