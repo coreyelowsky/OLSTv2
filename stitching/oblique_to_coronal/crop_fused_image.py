@@ -131,7 +131,7 @@ print()
 print('Save Image...')
 sys.stdout.flush()
 res = [float(x) for x in res]
-tif.imwrite(output_image_path, cropped_image, imagej=True, resolution=(1./res[0], 1./res[1]), metadata={'unit':'um','spacing':res[2], 'axes':'ZYX'})
+tif.imwrite(output_image_path, cropped_image, imagej=True, resolution=(1./res[0], 1./res[1]), metadata={'unit':'um', 'spacing':res[2], 'axes':'ZYX'})
 print()
 print('Done!')
 
