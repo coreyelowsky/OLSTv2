@@ -6,13 +6,14 @@ echo "Dowsnample Bash Script"
 echo "######################"
 echo ""
 
-# move log file
+# move log files
 sleep 5
-mv "$cur_dir"*downsample_${out_res_z}um.* "$output_data_path"logs
+mv "${cur_dir}"*${JOB_ID}* ${log_path}
 
-export input_image_path=${output_data_path}fused_${SGE_TASK_ID}.tif
-export output_image_path=${output_data_path}/isotropic/fused_${SGE_TASK_ID}.tif
+export input_image_path=${full_res_path}fused_${SGE_TASK_ID}.tif
+export output_image_path=${isotropic_path}fused_${SGE_TASK_ID}.tif
+export delete=true
 
 # run dowsnample
-$imagej_exe --headless --console -macro $downsample_macro "${input_image_path}?${output_image_path}"
+$imagej_exe --headless --console -macro $downsample_macro "${input_image_path}?${output_image_path}?${delete}"
 

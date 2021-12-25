@@ -22,43 +22,23 @@ args = split(args, "?");
 input_data_path = args[0];
 file_name = args[1]
 shear_file_path = args[2];
-isotropic = args[3];
-input_orientation = args[4];
-from_full_res = args[5];
-res_x = parseFloat(args[6]);
-res_y = parseFloat(args[7]);
-res_z = parseFloat(args[8]);
+input_orientation = args[3];
+res_x = parseFloat(args[4]);
+res_y = parseFloat(args[5]);
+res_z = parseFloat(args[6]);
 
 print("Parameters:");
 print("Input Image: " + input_data_path);
 print("File Name: " + file_name);
 print("Shear File: " + shear_file_path);
-print("Isotropic: " + isotropic);
 print("Input Orientation: " + input_orientation);
-print("From Full Res: " + from_full_res);
 print("Res X: " + res_x);
 print("Res Y: " + res_y);
 print("Res Z: " + res_z);
-
-
-if(isotropic == "true"){
-	output_data_path = input_data_path + "isotropic/";	
-}else{
-	output_data_path = input_data_path + "full_res/";
-}
-
-
-print("Output Data Path: " + output_data_path);
-
 print("");
 
 // full path to image
-if(from_full_res == "true"){
-	input_image_path_full = input_data_path + file_name;
-}else{
-	input_image_path_full = input_data_path + 'isotropic/'  + file_name;
-}
-
+input_image_path_full = input_data_path + file_name;
 print("Input Image Path: " + input_image_path_full);
 
 
@@ -71,30 +51,10 @@ res_z = my_round(res_z, 2);
 print("Resolution: " + res_x + " " + res_y + " " + res_z); 
 print("");
 
-// downsample to isotropic resolution
-if(isotropic == "true" && from_full_res == "true"){
-	downsample_scale_factor = res_x / res_z;
-
-	res_x = res_z;
-	res_y = res_z;
-
-	print("Downsample to Isotropic...");
-	print("Downsample Factor: " + downsample_scale_factor);
-	run("Scale...", "x="+downsample_scale_factor+" y="+downsample_scale_factor+" z=1.0 interpolation=Bilinear average process create");
-	print("Saving...");
-	saveAs("Tiff", output_data_path + "fused_oblique_" + res_x + "x" + res_y + "x" + res_z + ".tif");
-	print("");
-
-
-	// close previous window
-	selectWindow(file_name);
-	close();
-	selectWindow("fused_oblique_" + res_x + "x" + res_y + "x" + res_z + ".tif");
-}
-
 // reslice dimensions and vertical flip
 print("Reslice and Vertical Flip...");
 run("Reslice [/]...", "output=0 start=Left flip avoid");
+
 print("Saving...");
 reslice_path = output_data_path + "fused_oblique_resliced_"+ res_y + "x" + res_z + "x" + res_x+".tif";
 saveAs("Tiff", reslice_path);
@@ -103,8 +63,8 @@ print("");
 // close previous windows
 selectWindow("fused_oblique_" + res_x + "x" + res_y + "x" + res_z + ".tif");
 close();
+call("java.lang.System.gc");
 selectWindow("fused_oblique_resliced_"+ res_y + "x" + res_z + "x" + res_x + ".tif");
-
 
 // shear
 print("Shear...");
@@ -118,6 +78,7 @@ print("");
 
 // close all windows to clear memory
 close("*");
+call("java.lang.System.gc");
 
 // Open Sagittal
 print("Opening Sagittal...");
@@ -139,6 +100,7 @@ if(input_orientation == "coronal"){
 	// close sagittal
 	selectWindow("fused_sagittal_" + res_y + "x" + res_z + "x" + res_x + ".tif");
 	close();
+	call("java.lang.System.gc");
 	selectWindow("fused_sagittal_resliced_" + res_x + "x" + res_z + "x" + res_y + ".tif");
 
 	// rotate for coronal

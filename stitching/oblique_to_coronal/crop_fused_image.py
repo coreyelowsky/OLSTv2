@@ -16,27 +16,36 @@ sys.stdout.flush()
 args = sys.argv[1]
 args = args.split('?')
 
-data_path = args[0]
-orientation = args[1]
-res_x = args[2]
-res_y = args[3]
-res_z = args[4]
+input_image_path = args[0]
+output_image_path = args[1]
+output_path = args[2]
+res_x = args[3]
+res_y = args[4]
+res_z = args[5]
 res = [res_x, res_y, res_z]
 
-print('Input Path:', data_path)
+# get orientation
+if 'coronal' in input_image_path:
+	orientation = 'coronal'
+elif 'sagittal' in input_image_path:
+	orientation = 'sagittal'
+elif 'transverse' in input_image_path:
+	orientation = 'transverse'
+else:
+	sys.exit('Error: unable to parse orientation')
+
+print('Input Image Path:', input_image_path)
+print('Output Image Path:', output_image_path)
+print('Output Path:', output_path)
 print('Orientation:', orientation)
+print('Resolution:', res_x + 'x' + res_y + 'x' + res_z)
 print('')
 sys.stdout.flush()
-
-# io paths
-res_string = 'x'.join(res)
-input_filename = join(data_path, 'fused_' + orientation + '_' + res_string + '.tif')
-output_filename = join(data_path, 'fused_' + orientation + '_' + res_string + '_CROPPED.tif')
 
 # load image
 print('Loading Image...')
 sys.stdout.flush()
-image = tif.imread(input_filename)
+image = tif.imread(input_image_path)
 print('Image Shape:', image.shape)
 print()
 sys.stdout.flush()
@@ -53,7 +62,7 @@ if orientation == 'transverse':
 	print()
 
 	# write cropping info
-	with open(join(data_path,'cropping_info_' + orientation + '.txt'),'w') as fp:
+	with open(join(output_path,'cropping_info_' + orientation + '.txt'),'w') as fp:
 		fp.write(str(front_non_zero_index))
 		fp.write('\n')
 		fp.write(str(back_non_zero_index))
@@ -77,7 +86,7 @@ else:
 	print()
 
 	# write cropping info
-	with open(join(data_path,'cropping_info_' + orientation + '.txt'),'w') as fp:
+	with open(join(output_path,'cropping_info_' + orientation + '.txt'),'w') as fp:
 		fp.write(str(highest_non_zero_index))
 	
 	# crop image
@@ -102,7 +111,7 @@ print()
 print('Save Image...')
 sys.stdout.flush()
 res = [float(x) for x in res]
-tif.imwrite(output_filename, cropped_image, imagej=True, resolution=(1./res[0], 1./res[1]), metadata={'unit':'um','spacing':res[2], 'axes':'ZYX'})
+tif.imwrite(output_image_path, cropped_image, imagej=True, resolution=(1./res[0], 1./res[1]), metadata={'unit':'um','spacing':res[2], 'axes':'ZYX'})
 print()
 print('Done!')
 

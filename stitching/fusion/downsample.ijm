@@ -20,6 +20,7 @@ args = split(args, "?");
 
 input_image_path = args[0];
 output_image_path = args[1];
+delete = args[2];
 
 print("##########");
 print("Parameters");
@@ -27,6 +28,7 @@ print("##########");
 
 print("Input Image Path: " + input_image_path);
 print("Output Image Path: " + output_image_path);
+print("Delete: " + delete);
 
 print("");
 
@@ -53,7 +55,9 @@ saveAs("Tiff", output_image_path);
 print("");
 
 // delete original
-File.delete(input_image_path);
+if(delete == "true"){
+	File.delete(input_image_path);
+}
 
 eval("script","System.exit(0);");
 run("Quit");

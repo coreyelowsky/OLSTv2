@@ -19,22 +19,20 @@ export start_from_merge=false
 
 # if true then assumes the image has been already fused
 # and merged and will start from oblique to coronal
-export start_from_oblique_to_coronal=false
+export start_from_oblique_to_coronal=true
 
-# if true will compute full res image, otherwise
-# will downsample grid of fused images before merging
-# if false will not be able to create full res images (anisotropic)
-export compute_full_res_fused_image=false
+# if true will save full res fused image
+export merge_full_res_fused_image=false
 
 # output resolution for z
-export out_res_z=25
+export out_res_z=5
 
 # grid dimensions for parallel fusion
 # e.g. if grid_size=2, will be a 2x2 grid -> 4 jobs
-export grid_size=20
+export grid_size=5
 
 # xml filename
-export xml_file_name=estimate_overlaps.xml
+export xml_file_name=estimate_overlaps
 
 # if only want to fuse a small section then set to true
 # otherwise set to false
@@ -57,7 +55,7 @@ export interpolation="[Linear Interpolation]"
 # blending
 export blend=true
 
-# whether to run oblique -> coronal trnasformations
+# whether to run oblique -> coronal transformations
 # will always do isotopric transformation by default
 # will only do full res transformations if specified
 export oblique_to_coronal=true
@@ -87,7 +85,6 @@ echo "Fusion"
 echo "######"
 echo ""
 
-
 # make sure input path ends in /
 if [[ ! $input_data_path == */ ]];
 then
@@ -95,10 +92,6 @@ then
 	echo ""
 	exit
 fi
-
-echo "Load Modules to use correct python version...."
-module load EBModules
-module load Python/3.8.6-GCCcore-10.2.0
 
 # get current directory
 export cur_dir=`pwd`"/"
@@ -108,24 +101,25 @@ export base_dir=$(dirname $0)/../../
 
 # set up script paths
 export define_bounding_boxes_script="$base_dir"stitching/fusion/define_bounding_boxes.py
-export process_fusion_script="$base_dir"stitching/fusion/process_fusion.sh
-
-export merge_fused_volumes_bash_script="$base_dir"stitching/fusion/merge_fused_volumes.sh
-export merge_fused_volumes_python_script="$base_dir"stitching/fusion/merge_fused_volumes.py
-export fusion_parallel_script="$base_dir"stitching/fusion/fusion_parallel.sh
-export fusion_parallel_macro="$base_dir"stitching/fusion/fusion_parallel.ijm
-export wait_for_jobs_to_finish_merge_bash_script="$base_dir"stitching/fusion/wait_for_jobs_to_finish_merge.sh
-export wait_for_fusion_to_finish_oblique_to_coronal_bash_script="$base_dir"stitching/fusion/wait_for_fusion_to_finish_oblique_to_coronal.sh
-export update_fused_image_resolution_macro="$base_dir"stitching/fusion/update_fused_image_resolution.ijm
-export oblique_to_coronal_full_res_bash_script="$base_dir"stitching/fusion/oblique_to_coronal_full_res.sh
-export oblique_to_coronal_iso_bash_script="$base_dir"stitching/fusion/oblique_to_coronal_iso.sh
 export fusion_script="$base_dir"stitching/fusion/fusion.sh
 export fusion_macro="$base_dir"stitching/fusion/fusion.ijm
+export process_fusion_script="$base_dir"stitching/fusion/process_fusion.sh
+export merge_fused_volumes_bash_script="$base_dir"stitching/fusion/merge_fused_volumes.sh
+export merge_fused_volumes_python_script="$base_dir"stitching/fusion/merge_fused_volumes.py
+export oblique_to_coronal_bash_script="$base_dir"stitching/fusion/oblique_to_coronal.sh
 export oblique_to_coronal_macro="$base_dir"stitching/oblique_to_coronal/oblique_to_coronal.ijm
-export crop_fused_image_script="$base_dir"stitching/oblique_to_coronal/crop_fused_image.py
+export crop_python_script="$base_dir"stitching/oblique_to_coronal/crop_fused_image.py
+export crop_bash_script="$base_dir"stitching/oblique_to_coronal/crop_fused_image.sh
 export define_bounding_box_macro="$base_dir"stitching/fusion/define_bounding_box.ijm
 export downsample_script="$base_dir"stitching/fusion/downsample.sh
 export downsample_macro="$base_dir"stitching/fusion/downsample.ijm
+export reslice_bash_script="$base_dir"stitching/oblique_to_coronal/reslice.sh
+export reslice_macro="$base_dir"stitching/oblique_to_coronal/reslice.ijm
+export shear_bash_script="$base_dir"stitching/oblique_to_coronal/shear.sh
+export shear_macro="$base_dir"stitching/oblique_to_coronal/shear.ijm
+export rotate_bash_script="$base_dir"stitching/oblique_to_coronal/rotate.sh
+export rotate_macro="$base_dir"stitching/oblique_to_coronal/rotate.ijm
+export fusion_local_machine_script="$base_dir"stitching/fusion/fusion_local_machine.sh
 
 # import parameters
 source "$base_dir"stitching/stitching_params.sh
@@ -157,7 +151,6 @@ echo ""
 echo "Input Data Path: $input_data_path"
 echo "XML Filename: $xml_file_name"
 echo "Downsampling: $downsampling"
-echo "Parallel: $parallel"
 echo "Input Orientation: ${input_orientation}"
 echo "Oblique -> Coronal: $oblique_to_coronal"
 echo "Oblique -> Coronal (full res): $full_res_transformations"
@@ -167,25 +160,40 @@ echo "Fusion Memory: $fusion_memory"G
 echo "Threads Per Job: $threads_per_job"
 echo ""
 
-# number of jobs
-if [ $parallel = true ];
+# create output directory
+# if only fusing a region then will be included in directory name
+if [ $fuse_region = true ];
 then
-	export num_jobs=$((grid_size*grid_size))
-	echo "# Parallel Jobs: $num_jobs"
-	echo "Grid Size:" "$grid_size"x"$grid_size"
+	export region_id="region_z${z_min}-${z_max}_y${y_min}-${y_max}"
+	export output_data_path="${input_data_path}fusion_${out_res_z}um_${region_id}/"
 else
-	export num_jobs=1
-	echo "# Jobs: $num_jobs"
-	
+	export output_data_path="${input_data_path}fusion_${out_res_z}um/"
 fi
 
-# memory per thread for fusion
-export memory_per_thread_fusion=$((fusion_memory/threads_per_job+1))
-echo "Memory per Thread: $memory_per_thread_fusion"G
+# make output directories
+export log_path="${output_data_path}logs/"
+export isotropic_path="${output_data_path}isotropic/"
+export full_res_path="${output_data_path}full_res/"
+mkdir -p $output_data_path $log_path $isotropic_path $full_res_path
+
+# copy fiji (always recopy even if it exists already)
+export imagej_exe=${output_data_path}Fiji.app/ImageJ-linux64
+if [ ! -f $imagej_exe ];
+then 
+	echo "Copying Fiji..."
+	cp -r $fiji_path $output_data_path
+	chmod +x $imagej_exe
+fi
+echo "ImageJ Path: ${imagej_exe}"
+
 
 # if running on cluster check if parallel or not
 if [ $cluster = true ];
 then
+
+	echo "Load Modules to use correct python version...."
+	module load EBModules
+	module load Python/3.8.6-GCCcore-10.2.0
 
 	if [ $parallel = true ];
 	then
@@ -194,25 +202,10 @@ then
 		echo "Running in parallel..."
 		echo ""
 
-		# create output directory 
-		if [ $fuse_region = true ];
-		then
-			export region_id="region_z${z_min}-${z_max}_y${y_min}-${y_max}"
-			export output_data_path="${input_data_path}fusion_${out_res_z}um_${region_id}/"
-		else
-			export output_data_path="${input_data_path}fusion_${out_res_z}um/"
-		fi
+		export num_jobs=$((grid_size*grid_size))
+		echo "# Parallel Jobs: $num_jobs"
+		echo "Grid Size:" "$grid_size"x"$grid_size"
 
-		# make output directory and logs directory
-		export log_path="${output_data_path}logs/"
-		mkdir -p $output_data_path $log_path
-
-		# copy fiji (always recopy even if it exists already)
-		echo "Copying Fiji..."
-		export imagej_exe=${output_data_path}Fiji.app/ImageJ-linux64
-		cp -r $fiji_path $output_data_path
-		chmod +x $imagej_exe
-		echo "ImageJ Path: ${imagej_exe}"
 
 		# if any skip processing flags are true then go straight to next script and exit
 		if [ $start_from_downsample = true -o $start_from_merge = true -o $start_from_oblique_to_coronal = true ];
@@ -235,33 +228,29 @@ then
 		echo "" >> "$output_data_path"params_fusion.txt
 		echo ""
 
-		# job name
-		export job_name="fusion_${out_res_z}um_parallel"
-		echo "Job Name: $job_name"
-		echo ""
-
 		# run python script to create bounding boxes and save xml
-		python $define_bounding_boxes_script $input_data_path $xml_file_name $grid_size $downsampling $output_data_path $fuse_region $z_min $z_max $y_min $y_max
+		python $define_bounding_boxes_script $input_data_path ${xml_file_name}.xml $grid_size $downsampling $output_data_path $fuse_region $z_min $z_max $y_min $y_max
 
 		# modify dataset path in xml
-		xml_name_no_ext=`echo "${xml_file_name%.*}"`
-		sed -i 's/dataset/\.\.\/dataset/' "${output_data_path}${xml_name_no_ext}_bboxes_${grid_size}.xml"
+		export xml_full_path="${output_data_path}${xml_file_name}_bboxes_${grid_size}.xml"
+		sed -i 's/dataset/\.\.\/dataset/' $xml_full_path
 		echo ""
 
 		# update memory and threads for imagej
 		$imagej_exe --headless --console -macro $update_imagej_memory_macro "$fusion_memory?$imagej_threads"
 
-		# run job on cluster
-		qsub_output=`qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread_fusion*2))"G -t 1-$num_jobs $fusion_parallel_script`
-
-		# parse qsub output to get job id
-		export job_id=`echo $qsub_output | awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}'`
-		echo "Job ID: $job_id"
-		echo ""
+		# run fusion jobs on cluster
+		export job_name_fusion="fusion_${out_res_z}um"
+		export memory_per_thread_fusion=$((fusion_memory/threads_per_job+1))
+		export fusion_out_path=${output_data_path}full_res/
+		
+		echo "Job Name: ${job_name_fusion}"
+		echo "Memory per Thread: ${memory_per_thread_fusion}G"
+		export qsub_output=`qsub -N $job_name_fusion -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread_fusion*2))"G -t 1-$num_jobs $fusion_script`
 
 		# call merge volumes bash script to wait until all jobs are done
 		# use nohup and run in background so if terminal is closed, script will persist
-		echo "Wait for all fused volumes to complete and then merge..."
+		echo "Wait for all fused volumes to complete and then process fusions..."
 		echo ""
 
 		nohup $process_fusion_script > "${log_path}process_fusion.out" &
@@ -271,6 +260,9 @@ then
 		echo ""
 		echo "Not Running in parallel...."
 		echo ""
+
+		export num_jobs=1
+		echo "# Jobs: $num_jobs"
 
 		# create output directory 
 		export output_data_path="$input_data_path"fusion_"${out_res_z}"um/
@@ -300,7 +292,7 @@ then
 		$imagej_exe --headless --console -macro $update_imagej_memory_macro "$fusion_memory?$imagej_threads"
 
 		# run job on cluster
-		qsub_output=`qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free=$((memory_per_thread_fusion*2))G $fusion_script`
+		export qsub_output=`qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free=$((memory_per_thread_fusion*2))G $fusion_script`
 
 		if [ $oblique_to_coronal == true ];
 		then
@@ -321,9 +313,14 @@ then
 
 
 else
-	echo "Not Running on Cluster....."
+	
 	echo ""
-	echo "Need to Develop..."
+	echo "######################"
+	echo "Not Running on Cluster"
+	echo "######################"
 	echo ""
+
+	nohup $fusion_local_machine_script > "${log_path}fusion_logs.txt" &
+
 fi
 

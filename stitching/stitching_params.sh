@@ -9,6 +9,7 @@ export imagej_threads=48
 
 # ImageJ script to update memory and threads 
 export update_imagej_memory_macro="$base_dir"stitching/update_imagej_memory_and_threads.ijm
+export wait_for_jobs_to_complete_script="$base_dir"stitching/wait_for_jobs_to_complete.sh
 
 # oblique to coronal params
 export shear_file="$base_dir"stitching/oblique_to_coronal/shear_isotropic.txt
@@ -32,38 +33,6 @@ is_running_on_cluster(){
 		export cluster=false
 	fi
 }
-
-# function to distribute jobs among workers
-# as evenly as possible
-distribute_jobs(){
-
-	local num_jobs=$1
-	local num_workers=$2	
-
-	# initialize array 
-	for i in $(seq 0 $((num_workers-1)))
-	do
-		job_array[$i]=0
-	done
-
-
-	# increment jobs
-	idx=0
-	while [ $num_jobs -ne 0 ]
-	do
-		job_array[$idx]=$((job_array[$idx]+1))
-		num_jobs=$((num_jobs-1))
-	
-		if [ $idx -eq $((num_workers-1)) ]
-		then
-			idx=0
-		else
-			idx=$((idx+1))
-		fi
-	done
-}
-
-export -f distribute_jobs
 
 
 
