@@ -75,6 +75,9 @@ export fusion_memory=10
 # each physical slot (core) has 2 logical cores (threads)
 export threads_per_job=12
 
+# priority for fusion job
+export priority=-1
+
 #####################################
 #####################################
 #####################################
@@ -246,7 +249,7 @@ then
 		
 		echo "Job Name: ${job_name_fusion}"
 		echo "Memory per Thread: ${memory_per_thread_fusion}G"
-		export qsub_output=`qsub -N $job_name_fusion -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread_fusion*2))"G -t 1-$num_jobs $fusion_script`
+		export qsub_output=`qsub -N $job_name_fusion -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread_fusion*2))"G -t 1-$num_jobs -p ${priority} $fusion_script`
 
 		# call merge volumes bash script to wait until all jobs are done
 		# use nohup and run in background so if terminal is closed, script will persist
