@@ -8,7 +8,7 @@ echo ""
 
 # move log files
 sleep 20
-mv ${cur_dir}*${JOB_ID}.* ${log_path}
+mv ${cur_dir}*${JOB_ID}* ${log_path}
 
 
 # python script to merge volumes

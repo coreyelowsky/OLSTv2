@@ -53,9 +53,19 @@ sys.stdout.flush()
 if orientation == 'transverse':
 	# find plane index of front and back non zeros voxels
 	print('Find Highest and Lowest Non-Zero Voxels...')
-	non_zero_indices = np.argwhere(image)
-	front_non_zero_index = np.min(non_zero_indices[:,0])
-	back_non_zero_index = np.max(non_zero_indices[:,0])
+	for z in range(image.shape[0]):
+		if np.any(image[z, :, :]):
+			front_non_zero_index = z
+			break
+
+	for z in range(image.shape[0]-1, -1, -1):
+		if np.any(image[z, :, :]):
+			back_non_zero_index = z
+			break
+
+	#non_zero_indices = np.argwhere(image)
+	#front_non_zero_index = np.min(non_zero_indices[:,0])
+	#back_non_zero_index = np.max(non_zero_indices[:,0])
 
 	print('Front Non-Zero Index:', front_non_zero_index)
 	print('Back Non-Zero Index:', back_non_zero_index)
@@ -77,9 +87,19 @@ else:
 
 	# find row index of highest and lowest non zeros voxels
 	print('Find Highest and Lowest Non-Zero Voxels...')
-	non_zero_indices = np.argwhere(image)
-	highest_non_zero_index = np.min(non_zero_indices[:,1])
-	lowest_non_zero_index = np.max(non_zero_indices[:,1])
+	for y in range(image.shape[1]):
+		if np.any(image[:, y, :]):
+			highest_non_zero_index = y
+			break
+
+	for y in range(image.shape[1]-1, -1, -1):
+		if np.any(image[:, y, :]):
+			lowest_non_zero_index = y
+			break
+			
+	#non_zero_indices = np.argwhere(image)
+	#highest_non_zero_index = np.min(non_zero_indices[:,1])
+	#lowest_non_zero_index = np.max(non_zero_indices[:,1])
 
 	print('Highest Non-Zero Index:', highest_non_zero_index)
 	print('Lowest Non-Zero Index:', lowest_non_zero_index)
