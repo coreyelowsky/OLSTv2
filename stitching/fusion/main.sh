@@ -7,7 +7,7 @@
 ####################################
 
 # input directory
-export input_data_path=/grid/osten/data_norepl/qi/data/THY1/THY1-GFP-M1/
+export input_data_path=/grid/osten/data_norepl/qi/data/PV/PV-GFP-M4/
 
 # if true then assumes the image has been already fused
 # and will start from downsample
@@ -19,17 +19,17 @@ export start_from_merge=false
 
 # if true then assumes the image has been already fused
 # and merged and will start from oblique to coronal
-export start_from_oblique_to_coronal=true
+export start_from_oblique_to_coronal=false
 
 # if true will save full res fused image
 export merge_full_res_fused_image=false
 
 # output resolution for z
-export out_res_z=20
+export out_res_z=300
 
 # grid dimensions for parallel fusion
 # e.g. if grid_size=2, will be a 2x2 grid -> 4 jobs
-export grid_size=10
+export grid_size=20
 
 # xml filename
 # DO NOT INCLUDE EXTENSION
@@ -43,24 +43,9 @@ export z_max=25
 export y_min=19
 export y_max=19
 
-# whether to run in parallel or not
-# if not running on the cluster this will be ignored
-export parallel=true
-
-# output pixel type
-export pixel_type="[16-bit unsigned integer]"
-
-# interpolation type
-export interpolation="[Linear Interpolation]"
-
-# blending
-export blend=true
-
 # whether to run oblique -> coronal transformations
-# will always do isotopric transformation by default
-# will only do full res transformations if specified
-export oblique_to_coronal=true
-export full_res_transformations=false
+export oblique_to_coronal_isotropic=true
+export oblique_to_coronal_full_res=false
 
 # please make either 'coronal' or 'sagittal'
 # this is needed for oblique to coronal orientation
@@ -77,7 +62,22 @@ export fusion_memory=10
 export threads_per_job=12
 
 # priority for fusion job
+# 0 is the highest priority allowed
+# make negative integers if lower priority (e.g. priority=-1)
 export priority=0
+
+# whether to run in parallel or not
+# if not running on the cluster this will be ignored
+export parallel=true
+
+# output pixel type
+export pixel_type="[16-bit unsigned integer]"
+
+# interpolation type
+export interpolation="[Linear Interpolation]"
+
+# blending
+export blend=true
 
 #####################################
 #####################################
@@ -92,8 +92,14 @@ echo ""
 # make sure input path ends in /
 if [[ ! $input_data_path == */ ]];
 then
-	echo "Error: input_data_path must end in /"
-	echo ""
+	input_data_path="${input_data_path}/"
+fi
+
+# make sure priority is <=0
+if [ $priority -gt 0 ];
+then
+
+	echo "Error: priority must be less than or equal to 0"
 	exit
 fi
 
@@ -111,7 +117,6 @@ export process_fusion_script="$base_dir"stitching/fusion/process_fusion.sh
 export merge_fused_volumes_bash_script="$base_dir"stitching/fusion/merge_fused_volumes.sh
 export merge_fused_volumes_python_script="$base_dir"stitching/fusion/merge_fused_volumes.py
 export oblique_to_coronal_bash_script="$base_dir"stitching/fusion/oblique_to_coronal.sh
-export oblique_to_coronal_macro="$base_dir"stitching/oblique_to_coronal/oblique_to_coronal.ijm
 export crop_python_script="$base_dir"stitching/oblique_to_coronal/crop_fused_image.py
 export crop_bash_script="$base_dir"stitching/oblique_to_coronal/crop_fused_image.sh
 export define_bounding_box_macro="$base_dir"stitching/fusion/define_bounding_box.ijm
@@ -156,8 +161,8 @@ echo "Input Data Path: $input_data_path"
 echo "XML Filename: $xml_file_name"
 echo "Downsampling: $downsampling"
 echo "Input Orientation: ${input_orientation}"
-echo "Oblique -> Coronal: $oblique_to_coronal"
-echo "Oblique -> Coronal (full res): $full_res_transformations"
+echo "Oblique -> Coronal: $oblique_to_coronal_isotropic"
+echo "Oblique -> Coronal (full res): $oblique_to_coronal_full_res"
 echo "Output Resolution: $out_res"
 echo "Output Resolution (isotropic): $out_res_isotropic"
 echo "Fusion Memory: $fusion_memory"G
@@ -215,7 +220,7 @@ then
 		if [ $start_from_downsample = true -o $start_from_merge = true -o $start_from_oblique_to_coronal = true ];
 		then
 			echo ""
-			nohup $process_fusion_script > "${log_path}process_fusion.out" &
+			nohup $process_fusion_script > "${log_path}process_fusion.txt" &
 			exit
 		fi
 
@@ -257,64 +262,19 @@ then
 		echo "Wait for all fused volumes to complete and then process fusions..."
 		echo ""
 
-		nohup $process_fusion_script > "${log_path}process_fusion.out" &
+		nohup $process_fusion_script > "${log_path}process_fusion.txt" &
 	
 	else
 
 		echo ""
-		echo "Not Running in parallel...."
+		echo "#######################"
+		echo "Not Running in parallel"
+		echo "#######################"
 		echo ""
 
-		export num_jobs=1
-		echo "# Jobs: $num_jobs"
-
-		# create output directory 
-		export output_data_path="$input_data_path"fusion_"${out_res_z}"um/
-		mkdir $output_data_path
-
-		# copy fiji
-		cp -r $fiji_path $output_data_path
-		export imagej_exe=${output_data_path}Fiji.app/ImageJ-linux64
-		chmod +x $imagej_exe
-		echo "ImageJ Path: ${imagej_exe}"
-
-		echo "Write Parameters..."
-		echo "" >> "$output_data_path"params_fusion.txt
-		echo "Input Data Path: $output_data_path" >> "$output_data_path"params_fusion.txt
-		echo "XML Filename: $xml_file_name" >> "$output_data_path"params_fusion.txt
-		echo "Downsampling: $downsampling" >> "$output_data_path"params_fusion.txt
-		echo "Pixel Type: $pixel_type" >> "$output_data_path"params_fusion.txt
-		echo "Interpolation: $interpolation" >> "$output_data_path"params_fusion.txt
-		echo "blend: $blend" >> "$output_data_path"params_fusion.txt
-		echo "" >> "$output_data_path"params_fusion.txt
-		echo ""
-
-		# job name
-		export job_name="fusion_${out_res_z}um"
-
-		# update memory and threads for imagej
-		$imagej_exe --headless --console -macro $update_imagej_memory_macro "$fusion_memory?$imagej_threads"
-
-		# run job on cluster
-		export qsub_output=`qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free=$((memory_per_thread_fusion*2))G $fusion_script`
-
-		if [ $oblique_to_coronal == true ];
-		then
-
-			# parse qsub output to get job id
-			export job_id=`echo $qsub_output | awk 'match($0,/[0-9]+/){print substr($0, RSTART, RLENGTH)}'`
-			echo "Job ID: $job_id"
-			echo ""
-
-			# wait for fusion to finish and then run oblique to coronal
-			# use nohup and run in background so if terminal is closed, script will persist
-			echo "Wait for fusion to complete and then oblique to coronal..."
-			nohup $wait_for_fusion_to_finish_oblique_to_coronal_bash_script > "$output_data_path"nohup_oblique_to_coronal.out &
-
-		fi
+		echo "Need to develop..."
 
 	fi
-
 
 else
 	

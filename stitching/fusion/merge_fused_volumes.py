@@ -16,9 +16,17 @@ sys.stdout.flush()
 # parse arguments
 input_image_path = sys.argv[1]
 output_image_path = sys.argv[2]
-downsampling = sys.argv[3]
-grid_size = sys.argv[4]
-out_res = sys.argv[5]
+grid_size = sys.argv[3]
+out_res = sys.argv[4]
+delete = sys.argv[5]
+
+print()
+print('Input Image Path:', input_image_path)
+print('Output Image Path:', output_image_path)
+print('Grid Size:', grid_size)
+print('Out Res:', out_res)
+print('Delete:', delete)
+print('')
 
 # parse res
 # if integer make ints
@@ -73,8 +81,9 @@ for i, vertical_volume in enumerate(vertical_volumes):
 	del vertical_volume
 
 # remove volumes
-for i in range(1, int(grid_size)**2 + 1):
-	remove(join(input_image_path,'fused_'+str(i)+'.tif'))
+if delete == 'true':
+	for i in range(1, int(grid_size)**2 + 1):
+		remove(join(input_image_path,'fused_'+str(i)+'.tif'))
 
 
 # save fused volume
