@@ -76,7 +76,7 @@ export fusion_memory=10
 export threads_per_job=12
 
 # priority for fusion job
-export priority=-2
+export priority=0
 
 #####################################
 #####################################

@@ -52,7 +52,7 @@ then
 
 		echo "Job Name: $job_name_merge"
 		echo "Memory Per Thread: ${memory_per_thread}"
-		export qsub_output=`qsub -N $job_name_merge -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G $merge_fused_volumes_bash_script`
+		export qsub_output=`qsub -N $job_name_merge -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G -p ${priority} $merge_fused_volumes_bash_script`
 
 		source $wait_for_jobs_to_complete_script
 
@@ -92,7 +92,7 @@ then
 		export memory_per_thread=$((downsample_memory/threads_per_job + 1))
 		echo "Job Name: ${job_name_downsample}"
 		echo "Memory Per Thread: ${memory_per_thread}"
-		export qsub_output=`qsub -N $job_name_downsample -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G -t 1-$num_jobs $downsample_script`
+		export qsub_output=`qsub -N $job_name_downsample -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G -t 1-$num_jobs -p ${priority} $downsample_script`
 
 		source $wait_for_jobs_to_complete_script
 
@@ -128,7 +128,7 @@ then
 	echo "Memory Per Thread: ${memory_per_thread}"
 
 	# send jobs to cluster to merge volumes
-	export qsub_output=`qsub -N $job_name_merge -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G $merge_fused_volumes_bash_script`
+	export qsub_output=`qsub -N $job_name_merge -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G -p ${priority} $merge_fused_volumes_bash_script`
 
 	source $wait_for_jobs_to_complete_script
 
@@ -184,7 +184,7 @@ then
 
 		echo "Job Name: ${job_name}"
 		echo "Memory Per Thread: ${memory_per_thread}"
-		export qsub_output=`qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G $reslice_bash_script`
+		export qsub_output=`qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G -p ${priority} $reslice_bash_script`
 
 		source $wait_for_jobs_to_complete_script
 
@@ -229,7 +229,7 @@ then
 
 		echo "Job Name: ${job_name}"
 		echo "Memory Per Thread: ${memory_per_thread}"
-		export qsub_output=`qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G $shear_bash_script`
+		export qsub_output=`qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G -p ${priority} $shear_bash_script`
 
 		source $wait_for_jobs_to_complete_script
 
@@ -277,7 +277,7 @@ then
 
 		echo "Job Name: ${job_name}"
 		echo "Memory Per Thread: ${memory_per_thread}"
-		export qsub_output=`qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G $reslice_bash_script`
+		export qsub_output=`qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G -p ${priority} $reslice_bash_script`
 
 		source $wait_for_jobs_to_complete_script
 	
@@ -316,7 +316,7 @@ then
 
 			echo "Job Name: ${job_name}"
 			echo "Memory Per Thread: ${memory_per_thread}"
-			export qsub_output=`qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G $rotate_bash_script`
+			export qsub_output=`qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G -p ${priority} $rotate_bash_script`
 
 			source $wait_for_jobs_to_complete_script
 
@@ -353,7 +353,7 @@ then
 
 			echo "Job Name: ${job_name}"
 			echo "Memory Per Thread: ${memory_per_thread}"
-			export qsub_output=`qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G $reslice_bash_script`
+			export qsub_output=`qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G -p ${priority} $reslice_bash_script`
 
 			source $wait_for_jobs_to_complete_script
 		fi
@@ -393,7 +393,7 @@ then
 
 		echo "Job Name: ${job_name}"
 		echo "Memory Per Thread: ${memory_per_thread}"
-		qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G $crop_bash_script
+		qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G -p ${priority} $crop_bash_script
 
 	fi
 
@@ -433,7 +433,7 @@ then
 
 			echo "Job Name: ${job_name}"
 			echo "Memory Per Thread: ${memory_per_thread}"
-			qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G $crop_bash_script
+			qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G -p ${priority} $crop_bash_script
 
 		fi
 
@@ -470,7 +470,7 @@ then
 
 			echo "Job Name: ${job_name}"
 			echo "Memory Per Thread: ${memory_per_thread}"
-			qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G $crop_bash_script
+			qsub -N $job_name -cwd -binding linear_per_task:1 -pe threads $((threads_per_job/2)) -l m_mem_free="$((memory_per_thread*2))"G -p ${priority} $crop_bash_script
 
 		fi
 
