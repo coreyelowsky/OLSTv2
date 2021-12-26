@@ -7,7 +7,7 @@
 ####################################
 
 # input directory
-export input_data_path=/grid/osten/data_norepl/qi/data/OXT/OXT-IHC-M2/downsample2/
+export input_data_path=/grid/osten/data_norepl/qi/data/THY1/THY1-GFP-M1/
 
 # if true then assumes the image has been already fused
 # and will start from downsample
@@ -25,13 +25,14 @@ export start_from_oblique_to_coronal=true
 export merge_full_res_fused_image=false
 
 # output resolution for z
-export out_res_z=5
+export out_res_z=20
 
 # grid dimensions for parallel fusion
 # e.g. if grid_size=2, will be a 2x2 grid -> 4 jobs
-export grid_size=20
+export grid_size=10
 
 # xml filename
+# DO NOT INCLUDE EXTENSION
 export xml_file_name=estimate_overlaps
 
 # if only want to fuse a small section then set to true

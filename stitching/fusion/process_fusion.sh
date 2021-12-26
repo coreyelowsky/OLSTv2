@@ -146,9 +146,7 @@ then
 	echo ""
 
 
-	echo ""
-	echo "Reslice + Vertical Flip...."
-	echo ""
+	# Reslice + Vertical Flip
 
 	# get size of image
 	export input_image_path="${isotropic_path}fused_oblique_${out_res_z}x${out_res_z}x${out_res_z}.tif"
@@ -164,6 +162,10 @@ then
 
 	if [ ! -f $output_image_path ];
 	then
+
+		echo ""
+		echo "Reslice + Vertical Flip...."
+		echo ""
 
 		export fused_image_size_bytes=`du -bc ${input_image_path} | tail -1 | sed -e 's/\s.*$//'`
 		export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1000/1000/1000" | bc -l)
@@ -190,9 +192,8 @@ then
 
 	fi
 
-	echo ""
-	echo "Shear..."
-	echo ""
+
+	# Shear
 
 	export input_image_path=$output_image_path
 	if [ $input_orientation = "coronal" ];
@@ -209,6 +210,10 @@ then
 
 	if [ ! -f $output_image_path ];
 	then
+
+		echo ""
+		echo "Shear..."
+		echo ""
 
 		export fused_image_size_bytes=`du -bc ${input_image_path} | tail -1 | sed -e 's/\s.*$//'`
 		export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1000/1000/1000" | bc -l)
@@ -235,9 +240,8 @@ then
 
 	fi
 
-	echo ""
-	echo "Reslice...."
-	echo ""
+	
+	# Reslice
 
 	export input_image_path=$output_image_path
 	if [ $input_orientation = "coronal" ];
@@ -257,6 +261,10 @@ then
 
 	if [ ! -f $output_image_path ];
 	then
+
+		echo ""
+		echo "Reslice..."
+		echo ""
 
 		export fused_image_size_bytes=`du -bc ${input_image_path} | tail -1 | sed -e 's/\s.*$//'`
 		export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1000/1000/1000" | bc -l)
@@ -287,15 +295,17 @@ then
 	if [ $input_orientation = "coronal" ];
 	then
 
-		echo ""
-		echo "Rotate...."
-		echo ""
+		# Rotate
 
 		export input_image_path=$output_image_path
 		export output_image_path="${isotropic_path}fused_coronal_${out_res_z}x${out_res_z}x${out_res_z}.tif"
 
 		if [ ! -f $output_image_path ];
 		then
+
+			echo ""
+			echo "Rotate...."
+			echo ""
 
 			export fused_image_size_bytes=`du -bc ${input_image_path} | tail -1 | sed -e 's/\s.*$//'`
 			export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1000/1000/1000" | bc -l)
@@ -322,10 +332,9 @@ then
 
 		fi
 
-		echo ""
-		echo "Reslice...."
-		echo ""
 
+		# Reslice...
+		
 		export input_image_path=$output_image_path
 		export output_image_path="${isotropic_path}fused_transverse_${out_res_z}x${out_res_z}x${out_res_z}.tif"
 		export flip=false
@@ -333,6 +342,10 @@ then
 
 		if [ ! -f $output_image_path ];
 		then
+
+			echo ""
+			echo "Reslice...."
+			echo ""
 
 			export fused_image_size_bytes=`du -bc ${input_image_path} | tail -1 | sed -e 's/\s.*$//'`
 			export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1000/1000/1000" | bc -l)
@@ -360,9 +373,8 @@ then
 
 	fi
 
-	echo ""
-	echo "Crop Sagittal...."
-	echo ""
+
+	# Crop Sagittal
 
 	export input_image_path="${isotropic_path}fused_sagittal_${out_res_z}x${out_res_z}x${out_res_z}.tif"
 	export output_image_path="${isotropic_path}fused_sagittal_${out_res_z}x${out_res_z}x${out_res_z}_CROPPED.tif"
@@ -373,6 +385,10 @@ then
 
 	if [ ! -f $output_image_path ];
 	then
+
+		echo ""
+		echo "Crop Sagittal...."
+		echo ""
 
 		export fused_image_size_bytes=`du -bc ${input_image_path} | tail -1 | sed -e 's/\s.*$//'`
 		export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1000/1000/1000" | bc -l)
@@ -400,9 +416,8 @@ then
 	if [ $input_orientation = "coronal" ];
 	then
 
-		echo ""
-		echo "Crop Coronal...."
-		echo ""
+
+		# Crop Coronal
 
 		export input_image_path="${isotropic_path}fused_coronal_${out_res_z}x${out_res_z}x${out_res_z}.tif"
 		export output_image_path="${isotropic_path}fused_coronal_${out_res_z}x${out_res_z}x${out_res_z}_CROPPED.tif"
@@ -413,6 +428,10 @@ then
 
 		if [ ! -f $output_image_path ];
 		then
+
+			echo ""
+			echo "Crop Coronal...."
+			echo ""
 
 			export fused_image_size_bytes=`du -bc ${input_image_path} | tail -1 | sed -e 's/\s.*$//'`
 			export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1000/1000/1000" | bc -l)
@@ -437,9 +456,7 @@ then
 
 		fi
 
-		echo ""
-		echo "Crop Transverse..."
-		echo ""
+		# Crop Transverse
 
 		export input_image_path="${isotropic_path}fused_transverse_${out_res_z}x${out_res_z}x${out_res_z}.tif"
 		export output_image_path="${isotropic_path}fused_transverse_${out_res_z}x${out_res_z}x${out_res_z}_CROPPED.tif"
@@ -450,6 +467,10 @@ then
 
 		if [ ! -f $output_image_path ];
 		then
+
+			echo ""
+			echo "Crop Transverse..."
+			echo ""
 
 			export fused_image_size_bytes=`du -bc ${input_image_path} | tail -1 | sed -e 's/\s.*$//'`
 			export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1000/1000/1000" | bc -l)
