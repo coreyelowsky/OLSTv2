@@ -1,5 +1,5 @@
 from skimage.io import imread
-from os.path import join
+from os.path import join, exists
 from os import remove
 import sys
 import numpy as np
@@ -38,6 +38,11 @@ for x in out_res.split('x'):
 	res.append(x)
 	
 out_res_z = res[2]
+
+# make sure all images exist before beginning to load
+for i in range(1, int(grid_size)**2 + 1):
+	if not exists(image_path):
+		sys.exit('Error: Image does not exist - ' + image_path)
 
 # load all images
 vertical_volumes = []

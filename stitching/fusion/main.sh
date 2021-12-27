@@ -25,11 +25,11 @@ export start_from_oblique_to_coronal=false
 export merge_full_res_fused_image=false
 
 # output resolution for z
-export out_res_z=300
+export out_res_z=2.5
 
 # grid dimensions for parallel fusion
 # e.g. if grid_size=2, will be a 2x2 grid -> 4 jobs
-export grid_size=3
+export grid_size=10
 
 # xml filename
 # DO NOT INCLUDE EXTENSION
@@ -41,7 +41,7 @@ export fuse_region=false
 export z_min=25
 export z_max=25
 export y_min=19
-export y_max=19
+export y_max=20
 
 # whether to run oblique -> coronal transformations
 export oblique_to_coronal_isotropic=true
