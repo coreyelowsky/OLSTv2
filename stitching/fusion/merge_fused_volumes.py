@@ -41,6 +41,7 @@ out_res_z = res[2]
 
 # make sure all images exist before beginning to load
 for i in range(1, int(grid_size)**2 + 1):
+	image_path = join(input_image_path, 'fused_' + str(i) + '.tif')
 	if not exists(image_path):
 		sys.exit('Error: Image does not exist - ' + image_path)
 
