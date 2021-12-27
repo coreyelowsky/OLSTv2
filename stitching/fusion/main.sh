@@ -29,7 +29,7 @@ export out_res_z=300
 
 # grid dimensions for parallel fusion
 # e.g. if grid_size=2, will be a 2x2 grid -> 4 jobs
-export grid_size=20
+export grid_size=3
 
 # xml filename
 # DO NOT INCLUDE EXTENSION

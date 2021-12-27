@@ -14,6 +14,22 @@ export input_image_path=${full_res_path}fused_${SGE_TASK_ID}.tif
 export output_image_path=${isotropic_path}fused_${SGE_TASK_ID}.tif
 export delete=true
 
+# make sure fused volume exists
+if [ ! -f $input_image_path ];
+then
+
+	echo "Fused volume does not exist...."
+	exit
+fi
+
+# check if dowsnampled volume already exists
+if [ -f $output_image_path ];
+then
+
+	echo "Downsampled volume already exists...."
+	exit
+fi
+
 # run dowsnample
 $imagej_exe --headless --console -macro $downsample_macro "${input_image_path}?${output_image_path}?${delete}"
 
