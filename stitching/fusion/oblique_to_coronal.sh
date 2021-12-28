@@ -33,7 +33,7 @@ then
 	echo ""
 
 	export fused_image_size_bytes=`du -bc ${input_image_path} | tail -1 | sed -e 's/\s.*$//'`
-	export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1000/1000/1000" | bc -l)
+	export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1024/1024/1024" | bc -l)
 	export fused_image_size=`python -c "from math import ceil; print(ceil($fused_image_size_gb))"`
 
 	echo "Fused Image Size: ${fused_image_size_bytes} bytes"
@@ -80,7 +80,7 @@ then
 	echo ""
 
 	export fused_image_size_bytes=`du -bc ${input_image_path} | tail -1 | sed -e 's/\s.*$//'`
-	export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1000/1000/1000" | bc -l)
+	export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1024/1024/1024" | bc -l)
 	export fused_image_size=`python -c "from math import ceil; print(ceil($fused_image_size_gb))"`
 
 	echo "Fused Image Size: ${fused_image_size_bytes} bytes"
@@ -130,7 +130,7 @@ then
 	echo ""
 
 	export fused_image_size_bytes=`du -bc ${input_image_path} | tail -1 | sed -e 's/\s.*$//'`
-	export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1000/1000/1000" | bc -l)
+	export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1024/1024/1024" | bc -l)
 	export fused_image_size=`python -c "from math import ceil; print(ceil($fused_image_size_gb))"`
 
 	echo "Fused Image Size: ${fused_image_size_bytes} bytes"
@@ -171,7 +171,7 @@ then
 		echo ""
 
 		export fused_image_size_bytes=`du -bc ${input_image_path} | tail -1 | sed -e 's/\s.*$//'`
-		export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1000/1000/1000" | bc -l)
+		export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1024/1024/1024" | bc -l)
 		export fused_image_size=`python -c "from math import ceil; print(ceil($fused_image_size_gb))"`
 
 		echo "Fused Image Size: ${fused_image_size_bytes} bytes"
@@ -211,7 +211,7 @@ then
 		echo ""
 
 		export fused_image_size_bytes=`du -bc ${input_image_path} | tail -1 | sed -e 's/\s.*$//'`
-		export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1000/1000/1000" | bc -l)
+		export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1024/1024/1024" | bc -l)
 		export fused_image_size=`python -c "from math import ceil; print(ceil($fused_image_size_gb))"`
 
 		echo "Fused Image Size: ${fused_image_size_bytes} bytes"
@@ -254,7 +254,7 @@ then
 	echo ""
 
 	export fused_image_size_bytes=`du -bc ${input_image_path} | tail -1 | sed -e 's/\s.*$//'`
-	export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1000/1000/1000" | bc -l)
+	export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1024/1024/1024" | bc -l)
 	export fused_image_size=`python -c "from math import ceil; print(ceil($fused_image_size_gb))"`
 
 	echo "Fused Image Size: ${fused_image_size_bytes} bytes"
@@ -297,7 +297,7 @@ then
 		echo ""
 
 		export fused_image_size_bytes=`du -bc ${input_image_path} | tail -1 | sed -e 's/\s.*$//'`
-		export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1000/1000/1000" | bc -l)
+		export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1024/1024/1024" | bc -l)
 		export fused_image_size=`python -c "from math import ceil; print(ceil($fused_image_size_gb))"`
 
 		echo "Fused Image Size: ${fused_image_size_bytes} bytes"
@@ -336,7 +336,7 @@ then
 		echo ""
 
 		export fused_image_size_bytes=`du -bc ${input_image_path} | tail -1 | sed -e 's/\s.*$//'`
-		export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1000/1000/1000" | bc -l)
+		export fused_image_size_gb=$(echo "${fused_image_size_bytes}/1024/1024/1024" | bc -l)
 		export fused_image_size=`python -c "from math import ceil; print(ceil($fused_image_size_gb))"`
 
 		echo "Fused Image Size: ${fused_image_size_bytes} bytes"
