@@ -11,7 +11,7 @@ export input_data_path=/grid/osten/data_norepl/qi/data/PV/PV-GFP-M4/
 
 # if true then assumes the image has been already fused
 # and will start from downsample
-export start_from_downsample=false
+export start_from_downsample=true
 
 # if true then assumes that grid of fused images have already
 # been created and will start at merge step
@@ -25,11 +25,11 @@ export start_from_oblique_to_coronal=false
 export merge_full_res_fused_image=false
 
 # output resolution for z
-export out_res_z=2.5
+export out_res_z=5
 
 # grid dimensions for parallel fusion
 # e.g. if grid_size=2, will be a 2x2 grid -> 4 jobs
-export grid_size=10
+export grid_size=31
 
 # xml filename
 # DO NOT INCLUDE EXTENSION

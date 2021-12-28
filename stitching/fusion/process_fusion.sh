@@ -99,7 +99,7 @@ then
 
 
 		# calculate fused image size
-		export fused_image_size_bytes=`du -bc ${full_res_path}fused_1.tif | tail -1 | sed -e 's/\s.*$//'`
+		export fused_image_size_bytes=`du -bc ${full_res_path}fused_*.tif | head -1 | sed -e 's/\s.*$//'`
 		export fused_image_size_gb=$(echo "$fused_image_size_bytes/1024/1024/1024" | bc -l)
 		export fused_image_size=`python -c "from math import ceil; print(ceil($fused_image_size_gb))"`
 
