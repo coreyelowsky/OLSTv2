@@ -1680,6 +1680,42 @@ class StitchingXML():
 
 		return {'left':left, 'right':right, 'top':top,'bottom':bottom, 'front':front, 'back':back}
 
+	def volume_coords_to_fused_image_coords(self, volume, coords, *, 
+				fused_image_type, 
+				z_res=None, 
+				isotropic=False, 
+				cropping_coord=0, 
+				preserve_anisotropy=True,
+				region=False,
+				z_min=None,
+				z_max=None,
+				y_min=None,
+				y_max=None):
+
+		# convert to stitching coords
+		stitching_coords = self.transform_volume_coords_to_stitching_coords(volume, coords)
+
+		# transform stitching coords to fused image coords
+		coords = self.stitching_coords_to_fused_image_coords(
+				coords=stitching_coords,
+				fused_image_type=fused_image_type, 
+				z_res=z_res, 
+				isotropic=isotropic, 
+				cropping_coord=cropping_coord, 
+				preserve_anisotropy=preserve_anisotropy,
+				region=region,
+				z_min=z_min,
+				z_max=z_max,
+				y_min=y_min,
+				y_max=y_max)
+		
+		if coords.ndim == 2 and len(coords) == 1:
+			coords = coords.squeeze()
+
+		return coords
+
+
+
 
 
 	def stitching_coords_to_fused_image_coords(self, coords, *, 

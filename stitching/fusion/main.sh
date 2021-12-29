@@ -22,17 +22,17 @@ export start_from_merge=false
 export start_from_oblique_to_coronal=false
 
 # if true will save full res fused image
-export merge_full_res_fused_image=false
+export merge_full_res_fused_image=true
 
 # output resolution for z
-export out_res_z=2.5
+export out_res_z=25
 
 # grid dimensions for parallel fusion
 # e.g. if grid_size=2, will be a 2x2 grid -> 4 jobs
-export grid_size=32
+export grid_size=10
 
 # xml filename
-# DO NOT INCLUDE EXTENSON
+# DO NOT INCLUlDE EXTENSON
 export xml_file_name=estimate_overlaps
 
 # if only want to fuse a small section then set to true
@@ -45,7 +45,7 @@ export y_max=20
 
 # whether to run oblique -> coronal transformations
 export oblique_to_coronal_isotropic=true
-export oblique_to_coronal_full_res=false
+export oblique_to_coronal_full_res=true
 
 # please make either 'coronal' or 'sagittal'
 # this is needed for oblique to coronal orientation

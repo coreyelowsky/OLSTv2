@@ -72,37 +72,30 @@ def check_errors():
 if __name__ == '__main__':
 
 
-	#check_errors()
-
-	#overlay()
-	
-	xml_path = '/mnt/nfs/grids/hpc_norepl/elowsky/test/estimate_overlaps.xml'
+	xml_path = '/mnt/nfs/grids/hpc_norepl/elowsky/9_volume_test/estimate_overlaps.xml'
 	xml = StitchingXML(xml_path)
 
 	volume = 'Z02_Y02'
-	p = [398, 383, 2093]
+	coords = [398, 383, 2093]
+	fused_image_type = 'oblique'
 
-	
-	#fused_dims = xml.calculate_fused_dimensions(preserve_anisotropy=True, z_res=10)
-	#print(fused_dims)
-	#fused_lengths = np.array([fused_dims['x']['length'],fused_dims['y']['length'],fused_dims['z']['length']])
+	print()
+	print('Volume:', volume)
+	print('Volume Coords:', coords)
+	print()
 
-	#print('Fused Image Size', fused_lengths)
-
-
-	stitching_coords = xml.transform_volume_coords_to_stitching_coords(volume, p)
-
-	print('Volume Coord:', p)
-	print('Stitching Coord:', stitching_coords)
-
-	centroid = xml.stitching_coords_to_fused_image_coords(
-			stitching_coords,
-			fused_image_type='oblique',
-			z_res=2.5, 
-			isotropic=False,
+	transformed_coords = xml.volume_coords_to_fused_image_coords(
+			volume=volume, 
+			coords=coords, 
+			fused_image_type=fused_image_type,
+			z_res=2.5,
+			isotropic=True,
 			cropping_coord=0)
 
-	print('Final:',centroid)
+	print(fused_image_type + ':', transformed_coords)
+	print()
+
+
 
 	"""
 	xml.overlay_centroids_on_fused_image(
@@ -110,6 +103,7 @@ if __name__ == '__main__':
 			centroids_path='/mnt/brainstore8/palmer/OLSTv2/processed_brains/PV-GFP-M4/centroids/image_coords_no_overlap/', 
 			z_res=5, 
 			isotropic=True)
+
 	"""
 
 
