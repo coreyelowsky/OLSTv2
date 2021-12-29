@@ -6,7 +6,7 @@
 ######## For User to Modify ########
 ####################################
 
-export data_path=/grid/osten/data_norepl/qi/data/OXT/OXT-IHC-M2/downsample2/
+export data_path=/grid/osten/data_norepl/elowsky/test/
 
 export downsample_x=4
 export downsample_y=4

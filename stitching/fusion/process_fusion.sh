@@ -64,27 +64,6 @@ then
 
 		source $wait_for_jobs_to_complete_script
 
-		# OBLIQUE TO CORONAL FOR FULL RESOLUTION
-		if [ $oblique_to_coronal_full_res = true ];
-		then
-
-			echo ""
-			echo "####################################"
-			echo "Oblique to Coronal (Full Resolution)"
-			echo "####################################"
-			echo ""
-
-			export obc_inpath=$full_res_path
-			export obc_res_x=$out_res_x
-			export obc_res_y=$out_res_y
-			export obc_res_z=$out_res_z
-			
-			# run in background so execution continues
-			$oblique_to_coronal_bash_script > "${log_path}oblique_to_coronal_full_res.txt" &
-
-		fi
-
-
 	fi
 
 	# DOWNSAMPLE
@@ -178,12 +157,12 @@ then
 	export obc_res_z=$out_res_z
 
 	# run in background to allow full res jobs to start
-	$oblique_to_coronal_bash_script > "${log_path}oblique_to_coronal_isotropic.txt" &
+	$oblique_to_coronal_bash_script > "${log_path}oblique_to_coronal_isotropic.txt"
 	
 fi
 
 # OBLIQUE TO CORONAL FOR FULL RESOLUTION
-if [ $oblique_to_coronal_full_res = true -a $start_from_oblique_to_coronal = true ];
+if [ $oblique_to_coronal_full_res = true ];
 then
 
 	echo ""

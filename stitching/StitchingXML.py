@@ -1719,7 +1719,7 @@ class StitchingXML():
 
 		# get dimensions of fused image
 		downsampling = z_res / self.voxel_size[2]
-		fused_dims = self.calculate_fused_dimensions(preserve_anisotropy=True, z_res=z_res)
+		fused_dims = self.calculate_fused_dimensions(preserve_anisotropy=preserve_anisotropy, z_res=z_res)
 
 		# precalculate image sizes
 		fused_lengths = np.array([fused_dims['x']['length'],fused_dims['y']['length'],fused_dims['z']['length']])
@@ -1940,7 +1940,7 @@ class StitchingXML():
 
 		# check fused image type
 		if fused_image_type not in self.valid_fused_image_types:
-			exit('ERROR: Fused Image Type must be one of the following: ' + str(valid_fused_image_types))
+			exit('ERROR: Fused Image Type must be one of the following: ' + str(self.valid_fused_image_types))
 
 		# calculate output res
 		_, out_res_string = self.calculate_output_res(isotropic, z_res, fused_image_type)
@@ -2073,7 +2073,7 @@ class StitchingXML():
 		print()
 		print('Saving Overlay Image...')
 		image_out_path = join(outpath, 'centroids_overlayed_on_' + fused_image_type + '_' + out_res_string + '.tif')
-		tif.imsave(image_out_path , image)
+		tif.imwrite(image_out_path, image, imagej=True, resolution=(1./z_res, 1./z_res), metadata={'unit':'um', 'spacing':z_res, 'axes':'ZYX'})
 
 
 

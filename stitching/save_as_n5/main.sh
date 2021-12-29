@@ -8,13 +8,13 @@
 
 # input and output paths
 # input path assumes volumes folder exists
-export in_path=/grid/osten/data_norepl/qi/data/CALB1-IHC-R30-sixsection/cut-wf/downsample2_Z02/
-export out_path=/grid/osten/data_norepl/qi/data/CALB1-IHC-R30-sixsection/cut-wf/downsample2_Z02/
+export in_path=/grid/osten/data_norepl/elowsky/test/
+export out_path=/grid/osten/data_norepl/elowsky/test/
 
 # resolution
-export res_x=.52
-export res_y=.52
-export res_z=1
+export res_x=.78
+export res_y=.78
+export res_z=2.5
 
 # memory per job
 export memory_per_job=30
