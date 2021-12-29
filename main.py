@@ -71,18 +71,19 @@ def check_errors():
 		
 if __name__ == '__main__':
 
-	xiaoli = 'corey'
+
 	#check_errors()
 
 	#overlay()
-	"""
+	
 	xml_path = '/mnt/nfs/grids/hpc_norepl/qi/data/PV/PV-GFP-M4/estimate_overlaps.xml'
 	xml = StitchingXML(xml_path)
 
-	volume = 'Z13_Y09'
-	p1 = [167, 328, 2242]
-	z_res = 10
-	isotropic=True
+	volume = 'Z10_Y09'
+	p = [398, 383, 2093]
+	z_res = 5
+	isotropic = True
+	cropping_coord = 2607
 
 	
 	#fused_dims = xml.calculate_fused_dimensions(preserve_anisotropy=True, z_res=10)
@@ -92,20 +93,26 @@ if __name__ == '__main__':
 	#print('Fused Image Size', fused_lengths)
 
 
-	stitching_coords = xml.transform_volume_coords_to_stitching_coords(volume, p1)
+	stitching_coords = xml.transform_volume_coords_to_stitching_coords(volume, p)
 
 	print('Stitching Coord:', stitching_coords)
 
 	centroid = xml.stitching_coords_to_fused_image_coords(
 			stitching_coords,
-			fused_image_type='oblique',
+			fused_image_type='coronal_cropped',
 			z_res=z_res, 
-			isotropic=isotropic, 
-			cropping_coord=0,
-			preserve_anisotropy=True)
+			isotropic=isotropic,
+			cropping_coord=cropping_coord)
 
 	print('Final:',centroid)
-	"""
+
+	xml.overlay_centroids_on_fused_image(
+			fused_image_type='coronal_cropped',
+			centroids_path='/mnt/brainstore8/palmer/OLSTv2/processed_brains/PV-GFP-M4/centroids/image_coords_no_overlap/', 
+			z_res=5, 
+			isotropic=True,
+			stop_volume='Z05_Y01')
+	
 
 
 

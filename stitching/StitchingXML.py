@@ -1948,7 +1948,7 @@ class StitchingXML():
 
 		# set up paths
 		dataset_path = '/'.join(self.xml_path.split('/')[:-1])
-		fusion_path = join(dataset_path, 'fusion_' + str(z_res) + 'um_parallel')
+		fusion_path = join(dataset_path, 'fusion_' + str(z_res) + 'um')
 
 
 		# logic to decide whether full res or isotropic paths
