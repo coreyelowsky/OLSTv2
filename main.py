@@ -72,10 +72,10 @@ def check_errors():
 if __name__ == '__main__':
 
 
-	xml_path = '/mnt/nfs/grids/hpc_norepl/elowsky/9_volume_test/estimate_overlaps.xml'
+	xml_path = '/mnt/nfs/grids/hpc_norepl/qi/data/PV/PV-GFP-M4/estimate_overlaps.xml'
 	xml = StitchingXML(xml_path)
 
-	volume = 'Z02_Y02'
+	volume = 'Z10_Y09'
 	coords = [398, 383, 2093]
 	fused_image_type = 'oblique'
 
@@ -92,8 +92,13 @@ if __name__ == '__main__':
 			coords=coords, 
 			fused_image_type=fused_image_type,
 			z_res=5,
-			isotropic=True,
-			cropping_coord=0)
+			isotropic=False,
+			cropping_coord=0,
+			region=True,
+			z_min=9,
+			z_max=11,
+			y_min=8,
+			y_max=10)
 
 	print(fused_image_type + ':', transformed_coords)
 	print()

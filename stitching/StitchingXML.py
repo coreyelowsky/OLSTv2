@@ -1423,7 +1423,15 @@ class StitchingXML():
 		self.tree.write(out_path)
 
 
-	def calculate_fused_dimensions(self, preserve_anisotropy=False, z_res=None, fuse_region=False, z_min=None, z_max=None, y_min=None, y_max=None):
+	def calculate_fused_dimensions(
+			self, 
+			preserve_anisotropy=False, 
+			z_res=None, 
+			fuse_region=False, 
+			z_min=None, 
+			z_max=None, 
+			y_min=None, 
+			y_max=None):
 		
 		"""
 		Calculate dimensions of image in big stitcher for fusion
@@ -1443,7 +1451,7 @@ class StitchingXML():
 		
 		# iterate through volumes 
 		for setup_id in self.setups:
-
+	
 			# if fusing only region and volume not within region then continue
 			if fuse_region:
 				z = self.setup_id_to_z(setup_id)
@@ -1451,7 +1459,7 @@ class StitchingXML():
 				
 				if (not z_min <= z <= z_max) or (not y_min <= y <= y_max):
 					continue
-				
+
 
 			# get bounds of volume
 			bounds = self.get_volume_bounds_in_stitching_coordinates(setup_id)
@@ -1755,7 +1763,15 @@ class StitchingXML():
 
 		# get dimensions of fused image
 		downsampling = z_res / self.voxel_size[2]
-		fused_dims = self.calculate_fused_dimensions(preserve_anisotropy=preserve_anisotropy, z_res=z_res)
+		fused_dims = self.calculate_fused_dimensions(
+				preserve_anisotropy=preserve_anisotropy, 
+				z_res=z_res,
+				fuse_region=region, 
+				z_min=z_min, 
+				z_max=z_max, 
+				y_min=y_min, 
+				y_max=y_max)
+
 
 		# precalculate image sizes
 		fused_lengths = np.array([fused_dims['x']['length'],fused_dims['y']['length'],fused_dims['z']['length']])

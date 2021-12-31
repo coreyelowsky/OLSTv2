@@ -7,7 +7,7 @@
 ####################################
 
 # input directory
-export input_data_path=/grid/osten/data_norepl/elowsky/9_volume_test/
+export input_data_path=/grid/osten/data_norepl/qi/data/PV/PV-GFP-M4/
 
 # if true, will automtically set merge_full_res_fused_image=true
 # and will compute the isotropic image from the full res image
@@ -31,7 +31,7 @@ export start_from_merge=false
 export start_from_oblique_to_coronal=false
 
 # output resolution for z
-export out_res_z=2.5
+export out_res_z=5
 
 # grid dimensions for parallel fusion
 # e.g. if grid_size=2, will be a 2x2 grid -> 4 jobs
@@ -43,15 +43,15 @@ export xml_file_name=estimate_overlaps
 
 # if only want to fuse a small section then set to true
 # otherwise set to false
-export fuse_region=false
-export z_min=25
-export z_max=25
-export y_min=19
-export y_max=20
+export fuse_region=true
+export z_min=9
+export z_max=11
+export y_min=8
+export y_max=10
 
 # whether to run oblique -> coronal transformations
 export oblique_to_coronal_isotropic=true
-export oblique_to_coronal_full_res=false
+export oblique_to_coronal_full_res=true
 
 # please make either 'coronal' or 'sagittal'
 # this is needed for oblique to coronal orientation
@@ -252,7 +252,7 @@ then
 
 		# run python script to create bounding boxes and save xml
 		python $define_bounding_boxes_script $input_data_path ${xml_file_name}.xml $grid_size $downsampling $output_data_path $fuse_region $z_min $z_max $y_min $y_max
-
+		
 		# modify dataset path in xml
 		export xml_full_path="${output_data_path}${xml_file_name}_bboxes_${grid_size}.xml"
 		sed -i 's/dataset/\.\.\/dataset/' $xml_full_path
