@@ -84,11 +84,14 @@ if __name__ == '__main__':
 	print('Volume Coords:', coords)
 	print()
 
+	stitching_coords = xml.transform_volume_coords_to_stitching_coords(volume, coords)
+	print('Stitching Coords:', stitching_coords)
+
 	transformed_coords = xml.volume_coords_to_fused_image_coords(
 			volume=volume, 
 			coords=coords, 
 			fused_image_type=fused_image_type,
-			z_res=2.5,
+			z_res=5,
 			isotropic=True,
 			cropping_coord=0)
 

@@ -1966,7 +1966,15 @@ class StitchingXML():
 		return volume_coords_from_target
 
 
-	def overlay_centroids_on_fused_image(self, *, fused_image_type, centroids_path, z_res, isotropic, outpath=None, cropping_coord=None, image_shape=None, write_centroids=False, stop_volume=None):
+	def overlay_centroids_on_fused_image(self, *, 
+			fused_image_type, 
+			centroids_path, 
+			z_res, isotropic, 
+			outpath=None, 
+			cropping_coord=None, 
+			image_shape=None, 
+			write_centroids=False, 
+			stop_volume=None):
 
 		"""
 		- overlays centroids on coronal image

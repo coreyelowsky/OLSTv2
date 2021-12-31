@@ -7,7 +7,16 @@
 ####################################
 
 # input directory
-export input_data_path=/grid/osten/data_norepl/elowsky/test/
+export input_data_path=/grid/osten/data_norepl/elowsky/9_volume_test/
+
+# if true, will automtically set merge_full_res_fused_image=true
+# and will compute the isotropic image from the full res image
+# otherwise will downsample the grid of fusions
+export compute_isotropic_from_full_res=true
+
+# if true will save full res fused image
+# this is ignored if compute_isotropic_from_full_res=true
+export merge_full_res_fused_image=false
 
 # if true then assumes the image has been already fused
 # and will start from downsample
@@ -21,15 +30,12 @@ export start_from_merge=false
 # and merged and will start from oblique to coronal
 export start_from_oblique_to_coronal=false
 
-# if true will save full res fused image
-export merge_full_res_fused_image=true
-
 # output resolution for z
-export out_res_z=25
+export out_res_z=2.5
 
 # grid dimensions for parallel fusion
 # e.g. if grid_size=2, will be a 2x2 grid -> 4 jobs
-export grid_size=10
+export grid_size=30
 
 # xml filename
 # DO NOT INCLUlDE EXTENSON
@@ -45,7 +51,7 @@ export y_max=20
 
 # whether to run oblique -> coronal transformations
 export oblique_to_coronal_isotropic=true
-export oblique_to_coronal_full_res=true
+export oblique_to_coronal_full_res=false
 
 # please make either 'coronal' or 'sagittal'
 # this is needed for oblique to coronal orientation
@@ -101,6 +107,13 @@ then
 
 	echo "Error: priority must be less than or equal to 0"
 	exit
+fi
+
+# if copmuting isotropic from full res then 
+# must merge full res image
+if [ $compute_isotropic_from_full_res = true ];
+then
+	merge_full_res_fused_image=true
 fi
 
 # get current directory

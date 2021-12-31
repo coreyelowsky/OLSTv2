@@ -19,6 +19,8 @@ export output_image_path="${obc_inpath}fused_oblique_resliced_${obc_res_y}x${obc
 export flip=true
 export direction="Left"
 
+# if input image doesnt exist
+# then exit
 if [ ! -f $input_image_path ];
 then
 	echo "Error: Image Does Not Exist - ${input_image_path}"
