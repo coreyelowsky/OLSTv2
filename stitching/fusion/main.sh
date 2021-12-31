@@ -43,7 +43,7 @@ export xml_file_name=estimate_overlaps
 
 # if only want to fuse a small section then set to true
 # otherwise set to false
-export fuse_region=true
+export fuse_region=false
 export z_min=9
 export z_max=11
 export y_min=8
