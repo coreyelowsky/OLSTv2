@@ -45,10 +45,12 @@ then
 		echo "Fused Image Size: ${fused_image_size_bytes} bytes"
 		echo "Fused Image Size: ${fused_image_size_gb} GB"
 		echo "Fused Image Size (rounded up): ${fused_image_size} GB"
+		
+		export merge_memory=$((fused_image_size*5))
 
 		# update memory and threads for imagej
 		# need to allocate memory for processing of full fused image
-		$imagej_exe --headless --console -macro $update_imagej_memory_macro "$fused_image_size?$imagej_threads"
+		$imagej_exe --headless --console -macro $update_imagej_memory_macro "$merge_memory?$imagej_threads"
 	
 		# set up env variables for merge
 		export merge_in_path=${full_res_path}
@@ -64,7 +66,7 @@ then
 
 		# send jobs to cluster to merge volumes
 		export job_name_merge=merge_fusion_"${out_res_z}"um_full_res
-		export memory_per_thread=$((fused_image_size/threads_per_job + 1))
+		export memory_per_thread=$((merge_memory/threads_per_job + 1))
 
 		echo "Job Name: $job_name_merge"
 		echo "Memory Per Thread: ${memory_per_thread}"

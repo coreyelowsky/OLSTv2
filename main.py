@@ -72,11 +72,11 @@ def check_errors():
 if __name__ == '__main__':
 
 
-	xml_path = '/mnt/nfs/grids/hpc_norepl/qi/data/PV/PV-GFP-M4/estimate_overlaps.xml'
+	xml_path = '/mnt/nfs/grids/hpc_norepl/qi/data/GAD2/GAD2-GFP-M4/translate_to_grid.xml'
 	xml = StitchingXML(xml_path)
-
-	volume = 'Z10_Y09'
-	coords = [398, 383, 2093]
+	"""
+	volume = 'Z11_Y07'
+	coords = [156, 530, 1971]
 	fused_image_type = 'oblique'
 
 	print()
@@ -94,7 +94,7 @@ if __name__ == '__main__':
 			z_res=5,
 			isotropic=False,
 			cropping_coord=0,
-			region=True,
+			region=False,
 			z_min=9,
 			z_max=11,
 			y_min=8,
@@ -102,16 +102,19 @@ if __name__ == '__main__':
 
 	print(fused_image_type + ':', transformed_coords)
 	print()
-
-
+	"""
 
 	"""
-	xml.overlay_centroids_on_fused_image(
-			fused_image_type='oblique',
-			centroids_path='/mnt/brainstore8/palmer/OLSTv2/processed_brains/PV-GFP-M4/centroids/image_coords_no_overlap/', 
+	xml.overlay_centroids_on_fused_image( 
+			fused_image_type='coronal_cropped', 
+			centroids_path='/mnt/nfs/brainstore8/palmer/OLSTv2/processed_brains/PV-GFP-M4/centroids/image_coords_no_overlap/', 
 			z_res=5, 
-			isotropic=True)
-
+			isotropic=True, 
+			outpath=None, 
+			cropping_coord=None, 
+			image_shape=None, 
+			write_centroids=False, 
+			stop_volume='Z05_Y01')
 	"""
 
 

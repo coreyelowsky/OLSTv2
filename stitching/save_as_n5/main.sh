@@ -8,8 +8,7 @@
 
 # input and output paths
 # input path assumes volumes folder exists
-export in_path=/grid/osten/data_norepl/elowsky/test/
-export out_path=/grid/osten/data_norepl/elowsky/test/
+export in_path=/grid/osten/data_norepl/qi/data/GAD2/GAD2-GFP-M4/
 
 # resolution
 export res_x=.78
@@ -39,9 +38,13 @@ export threads_per_job=24
 #####################################
 #####################################
 
+# set out path
+export out_path=$in_path
+
 # check if overlap range file provided
 overlap_range_path="${in_path}overlap_range.txt"
-if [ ! -f $overlap_range_path ];then
+if [ ! -f $overlap_range_path ];
+then
 	echo "Error: overlap_range.txt does not exist"
 	exit
 fi
