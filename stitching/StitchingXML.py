@@ -2134,7 +2134,7 @@ class StitchingXML():
 		print()
 		print('Saving Overlay Image...')
 		image_out_path = join(outpath, 'centroids_overlayed_on_' + fused_image_type + '_' + out_res_string + '.tif')
-		tif.imwrite(image_out_path, image, imagej=True, resolution=(1./z_res, 1./z_res), metadata={'unit':'um', 'spacing':z_res, 'axes':'ZYX'})
+		tif.imsave(image_out_path, image, imagej=True, resolution=(1./z_res, 1./z_res), metadata={'unit':'um', 'spacing':z_res, 'axes':'ZYX'})
 
 
 
