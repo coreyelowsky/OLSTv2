@@ -72,8 +72,19 @@ def check_errors():
 if __name__ == '__main__':
 
 
-	xml_path = '/mnt/nfs/grids/hpc_norepl/qi/data/GAD2/GAD2-GFP-M4/translate_to_grid.xml'
+	xml_path = '/mnt/nfs/grids/hpc_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/estimate_overlaps_original.xml'
 	xml = StitchingXML(xml_path)
+
+
+	overlaps = {'x':5.7, 'y':18, 'z':97.1}
+	xml.set_translation_to_grid_overlaps(overlaps)
+	xml.save_xml('estimate_overlaps')
+
+	xml_path = '/mnt/nfs/grids/hpc_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/estimate_overlaps.xml'
+	xml = StitchingXML(xml_path)
+	xml.generate_report()
+	
+
 	"""
 	volume = 'Z11_Y07'
 	coords = [156, 530, 1971]
@@ -107,15 +118,16 @@ if __name__ == '__main__':
 	"""
 	xml.overlay_centroids_on_fused_image( 
 			fused_image_type='coronal_cropped', 
-			centroids_path='/mnt/nfs/brainstore8/palmer/OLSTv2/processed_brains/PV-GFP-M4/centroids/image_coords_no_overlap/', 
-			z_res=5, 
+			centroids_path='/mnt/nfs/brainstore8/palmer/OLSTv2/processed_brains/GAD2-GFP-M4/centroids/image_coords_no_overlap/', 
+			z_res=10, 
 			isotropic=True, 
 			outpath=None, 
 			cropping_coord=None, 
 			image_shape=None, 
 			write_centroids=False, 
-			stop_volume='Z05_Y01')
+			stop_volume=None)
 	"""
+
 
 
 

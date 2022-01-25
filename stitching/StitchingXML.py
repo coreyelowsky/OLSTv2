@@ -84,7 +84,7 @@ class StitchingXML():
 		self.pairwise_overlaps_1d['y'], self.pairwise_overlaps_2d['y'] = self.arrange_overlaps_grid('y', 'pairwise')
 		self.pairwise_overlaps_1d['z'], self.pairwise_overlaps_2d['z'] = self.arrange_overlaps_grid('z', 'pairwise')
 
-		self.valid_fused_image_types = ['oblique', 'oblique_resliced', 'sagittal', 'sagittal_resliced', 'coronal', 'coronal_cropped']
+		self.valid_fused_image_types = ['oblique', 'oblique_resliced', 'sagittal', 'sagittal_resliced', 'coronal', 'coronal_cropped', 'sagittal_cropped']
 
 	@staticmethod
 	def normal_round(n):
@@ -1866,11 +1866,13 @@ class StitchingXML():
 		# create transformation matrix
 		if fused_image_type == 'oblique':
 			transform_matrix = np.eye(4)
-		if fused_image_type == 'oblique_resliced':
+		elif fused_image_type == 'oblique_resliced':
 			transform_matrix = vertical_flip_matrix @ reslice_matrix 
-		if fused_image_type == 'sagittal':
+		elif fused_image_type == 'sagittal':
 			transform_matrix = shear_matrix @ vertical_flip_matrix @ reslice_matrix 
-		if fused_image_type == 'sagittal_resliced':
+		elif fused_image_type == 'sagittal_cropped':
+			transform_matrix = crop_shift_matrix @ shear_matrix @ vertical_flip_matrix @ reslice_matrix 
+		elif fused_image_type == 'sagittal_resliced':
 			transform_matrix = reslice_matrix @ shear_matrix @ vertical_flip_matrix @ reslice_matrix 
 		elif fused_image_type == 'coronal':
 			transform_matrix = rotate_matrix @ reslice_matrix @ shear_matrix @ vertical_flip_matrix @ reslice_matrix 
@@ -2138,7 +2140,7 @@ class StitchingXML():
 
 
 
-	def fused_coronal_cropped_coords_to_volume_id(self, coords, fusion_path):
+	def fused_coords_to_volume_id(self, coords, fusion_path, image_type, res):
 
 		"""
 		- takes coordinates from fused coronal cropped and gets volume id
@@ -2163,20 +2165,21 @@ class StitchingXML():
 			else:
 				y_max = int(y[1])
 			region = True
-
-		# extract z res
-		z_res = float(fusion_path.split('/')[-2].split('_')[1][:-2])
 			
 
 		# make sure cropping info exists
-		cropping_info_path = join(fusion_path, 'isotropic', 'cropping_info_coronal.txt')
+		if 'coronal' in image_type:
+			cropping_info_path = join(fusion_path, 'isotropic', 'cropping_info_coronal.txt')
+		elif 'sagittal' in image_type:
+			cropping_info_path = join(fusion_path, 'isotropic', 'cropping_info_sagittal.txt')
+
 		if not exists(cropping_info_path):
 			exit('Error: cropping info does not exists...')
 
 		with open(cropping_info_path, 'r') as fp:
 			cropping_coord = int(fp.readline())
 	
-		# iterate through all setups and get bounding box in coronal cropped
+		# iterate through all setups get coords in fused image
 		min_volume = None
 		min_dist = np.Inf
 
@@ -2192,8 +2195,8 @@ class StitchingXML():
 		# get coords in coronal cropped	
 		center = self.stitching_coords_to_fused_image_coords(
 				center_coords,
-				fused_image_type='coronal_cropped',
-				z_res=z_res, 
+				fused_image_type=image_type,
+				z_res=res, 
 				isotropic=True, 
 				cropping_coord=cropping_coord,
 				region=region,

@@ -3,8 +3,11 @@ from os.path import join, exists
 from sys import exit
 
 ##################################################
-FUSION_PATH = '/mnt/nfs/grids/hpc_norepl/qi/data/PV/PV-GFP-M4/fusion_25um_parallel/'
-COORDS = [371, 244, 425]
+FUSION_PATH = '/mnt/nfs/grids/hpc_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/'
+COORDS = [1477, 1087, 1075]
+COORDS = [1503, 1087, 1075]
+IMAGE_TYPE = 'sagittal_cropped'
+RESOLUTION = 5
 #################################################
 
 
@@ -16,20 +19,22 @@ print()
 
 print('Fusion Path:', FUSION_PATH)
 print('Coords:', COORDS)
+print('Image Type:', IMAGE_TYPE)
+print('Resolution:', RESOLUTION)
 print()
 
-# error if fusion path is not up to date
-if 'um' not in FUSION_PATH:
-	exit('Error: FUSION_PATH is old - ' + FUSION_PATH)
+
 
 # make sure fusion path exists
-if not exists(FUSION_PATH):
-	exit('Error: FUSION_PATH does not exist - ' + FUSION_PATH)
+fusion_path = join(FUSION_PATH, f'fusion_{RESOLUTION}um')
+if not exists(fusion_path):
+	exit('Error: FUSION_PATH does not exist - ' + fusion_path)
 
 
 # look for estimate overlaps
 # should be one directory up
-dataset_dir = '/'.join(FUSION_PATH.split('/')[:-2])
+dataset_dir = '/'.join(fusion_path.split('/')[:-1])
+
 
 xml_path = join(dataset_dir, 'estimate_overlaps.xml')
 if not exists(xml_path):
@@ -39,9 +44,11 @@ if not exists(xml_path):
 xml = StitchingXML(xml_path, sectioning=False)
 
 # get volume id
-volume_id = xml.fused_coronal_cropped_coords_to_volume_id(
+volume_id = xml.fused_coords_to_volume_id(
 		coords = COORDS, 
-		fusion_path = FUSION_PATH)
+		fusion_path = fusion_path,
+		image_type=IMAGE_TYPE,
+		res=RESOLUTION)
 
 print('Volume:', volume_id)
 print()

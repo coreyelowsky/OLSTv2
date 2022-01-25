@@ -7,7 +7,7 @@
 ####################################
 
 # input directory
-export input_data_path=/grid/osten/data_norepl/qi/data/GAD2/GAD2-GFP-M4/
+export input_data_path=/grid/osten/data_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/
 
 # if true, will automtically set merge_full_res_fused_image=true
 # and will compute the isotropic image from the full res image
@@ -24,18 +24,18 @@ export start_from_downsample=false
 
 # if true then assumes that grid of fused images have already
 # been created and will start at merge step
-export start_from_merge=false
+export start_from_merge=true
 
 # if true then assumes the image has been already fused
 # and merged and will start from oblique to coronal
 export start_from_oblique_to_coronal=false
 
 # output resolution for z
-export out_res_z=10
+export out_res_z=5
 
 # grid dimensions for parallel fusion
 # e.g. if grid_size=2, will be a 2x2 grid -> 4 jobs
-export grid_size=30
+export grid_size=40
 
 # xml filename
 # DO NOT INCLUlDE EXTENSON

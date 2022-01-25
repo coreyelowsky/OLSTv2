@@ -8,12 +8,12 @@
 
 # input and output paths
 # input path assumes volumes folder exists
-export in_path=/grid/osten/data_norepl/qi/data/GAD2/GAD2-GFP-M4/
+export in_path=/grid/osten/data_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/
 
 # resolution
-export res_x=.78
-export res_y=.78
-export res_z=2.5
+export res_x=.52
+export res_y=.52
+export res_z=1.5
 
 # memory per job
 export memory_per_job=30
