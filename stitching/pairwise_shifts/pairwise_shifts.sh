@@ -11,16 +11,15 @@ mv "${cur_dir}pairwise_shifts."*${JOB_ID}* $out_path_logs
 
 
 # calculate pairwise shifts
-if [ $num_z_volumes -eq 1 ];
+if [ $num_z_volumes -eq 1 -o $parallel = false ];
 then
 
 	# run pairwise shifts
-	$imagej_exe --headless --console -macro $pairwise_shifts_macro "${data_path}?${downsample_x}?${downsample_y}?${downsample_z}?${num_z_volumes}?0?${num_y_volumes}"
+	$imagej_exe --headless --console -macro $pairwise_shifts_macro "${data_path}?${downsample_x}?${downsample_y}?${downsample_z}?${num_z_volumes}?0?${num_y_volumes}?${parallel}"
 
 	# rename files
 	mv ${data_path}translate_to_grid.xml ${data_path}pairwise_shifts.xml
 	mv ${data_path}translate_to_grid.xml~1 ${data_path}translate_to_grid.xml
-
 
 	if [ $estimate_overlaps = true  ];
 	then
@@ -35,7 +34,7 @@ else
 	job_folder="${out_path}Z_${SGE_TASK_ID}_$((SGE_TASK_ID+1))/"
 
 	# run pairwise shifts
-	$imagej_exe --headless --console -macro $pairwise_shifts_macro "${job_folder}?${downsample_x}?${downsample_y}?${downsample_z}?${num_z_volumes}?${SGE_TASK_ID}?${num_y_volumes}"
+	$imagej_exe --headless --console -macro $pairwise_shifts_macro "${job_folder}?${downsample_x}?${downsample_y}?${downsample_z}?${num_z_volumes}?${SGE_TASK_ID}?${num_y_volumes}?${parallel}"
 fi
 
 

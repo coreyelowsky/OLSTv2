@@ -7,7 +7,12 @@
 ####################################
 
 # input directory
-export input_data_path=/grid/osten/data_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/
+export input_data_path=/grid/osten/data_norepl/elowsky/AVP_test/
+
+# merged memory
+export merge_memory_multiplier=3
+export custom_merge_memory=true
+export merge_memory=2500
 
 # if true, will automtically set merge_full_res_fused_image=true
 # and will compute the isotropic image from the full res image
@@ -24,18 +29,18 @@ export start_from_downsample=false
 
 # if true then assumes that grid of fused images have already
 # been created and will start at merge step
-export start_from_merge=true
+export start_from_merge=false
 
 # if true then assumes the image has been already fused
 # and merged and will start from oblique to coronal
 export start_from_oblique_to_coronal=false
 
 # output resolution for z
-export out_res_z=5
+export out_res_z=1.5
 
 # grid dimensions for parallel fusion
 # e.g. if grid_size=2, will be a 2x2 grid -> 4 jobs
-export grid_size=40
+export grid_size=20
 
 # xml filename
 # DO NOT INCLUlDE EXTENSON

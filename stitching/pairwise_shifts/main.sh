@@ -6,7 +6,7 @@
 ######## For User to Modify ########
 ####################################
 
-export data_path=/grid/osten/data_norepl/elowsky/test/
+export data_path=/grid/osten/data_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/
 
 export downsample_x=4
 export downsample_y=4
@@ -20,6 +20,8 @@ export threads_per_job=10
 export sectioning=false
 
 export start_from_merge=false
+
+export parallel=true
 
 #####################################
 #####################################
@@ -102,10 +104,10 @@ if [ $cluster = true ];
 then
 
 	# if only 1 z volume then dont perform in parallel
-	if [ $num_z_volumes -eq 1 ];
+	if [ $num_z_volumes -eq 1 -o $parallel = false ];
 	then
 	
-		echo "Only 1 Z folder - not running in parallel"
+		echo "Not running in parallel"
 
 		# memory per thread
 		export memory_per_thread=$((memory_per_job/threads_per_job+1))

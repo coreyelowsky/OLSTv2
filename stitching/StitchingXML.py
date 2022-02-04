@@ -1220,22 +1220,31 @@ class StitchingXML():
 				print('# Overlaps:', len(overlaps))
 				print('Mean: ', overlaps.mean().round(1))
 
-				if overlap_constraints is not None and dim != 'z':
-					low_const = overlap_constraints[dim]['center'] - overlap_constraints[dim]['delta']
-					if low_const < 0:
-						low_const = 0
-					high_const = overlap_constraints[dim]['center'] + overlap_constraints[dim]['delta']
-					overlaps = overlaps[np.logical_and(overlaps > low_const, overlaps < high_const)]
-					print('Constraints: ', low_const, '<->' , high_const)
-					print('# Overlaps (after constraint):', len(overlaps))
-					print('Mean: ', overlaps.mean().round(1))
-		
-				num_outliers = int(np.round(len(overlaps)*middle_percentage/2))
-				middle_overlaps = overlaps[num_outliers:len(overlaps)-num_outliers]
-				print('# Overlaps (keeping middle percentage):', len(middle_overlaps))
-				print('Mean: ', middle_overlaps.mean().round(1))
+				if len(overlaps) == 0:
+					continue
 
-				overlaps_dict[dim] = np.array(middle_overlaps).mean().round(1)
+				elif len(overlaps) == 1:
+					overlaps_dict[dim] = overlaps[0]
+
+				else:
+					if overlap_constraints is not None and dim != 'z':
+						low_const = overlap_constraints[dim]['center'] - overlap_constraints[dim]['delta']
+						if low_const < 0:
+							low_const = 0
+						high_const = overlap_constraints[dim]['center'] + overlap_constraints[dim]['delta']
+						overlaps = overlaps[np.logical_and(overlaps > low_const, overlaps < high_const)]
+						print('Constraints: ', low_const, '<->' , high_const)
+						print('# Overlaps (after constraint):', len(overlaps))
+						print('Mean: ', overlaps.mean().round(1))
+		
+					num_outliers = int(np.round(len(overlaps)*middle_percentage/2))
+					middle_overlaps = overlaps[num_outliers:len(overlaps)-num_outliers]
+					print('# Overlaps (keeping middle percentage):', len(middle_overlaps))
+					print('Mean: ', middle_overlaps.mean().round(1))
+
+					overlaps_dict[dim] = np.array(middle_overlaps).mean().round(1)
+
+			
 
 		if set_overlaps_and_save:
 

@@ -5,7 +5,7 @@ from sys import exit
 ##################################################
 FUSION_PATH = '/mnt/nfs/grids/hpc_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/'
 COORDS = [1477, 1087, 1075]
-COORDS = [1503, 1087, 1075]
+#COORDS = [1503, 1087, 1075]
 IMAGE_TYPE = 'sagittal_cropped'
 RESOLUTION = 5
 #################################################

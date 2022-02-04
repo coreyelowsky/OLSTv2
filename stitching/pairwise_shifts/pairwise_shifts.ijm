@@ -28,6 +28,7 @@ downsample_z = args[3];
 num_z_volumes = parseInt(args[4]);
 z_volume = parseInt(args[5]);
 num_y_volumes = parseInt(args[6]);
+parallel = args[7];
 
 print("Calculate Pairwise Shifts (ImageJ Macro)")
 print("");
@@ -38,6 +39,7 @@ if(num_z_volumes > 1){
 	print("Z Volume: " + z_volume);
 }
 print("Num Y: " + num_y_volumes);
+print("Parallel: " + parallel);
 print("");
 
 print("Running - Calculate pairwise shifts");
@@ -46,7 +48,7 @@ xml_full_path = xml_path + "translate_to_grid.xml";
 
 start_time = getTime();
 
-if(num_z_volumes > 1){
+if(num_z_volumes > 1 && parallel == "true"){
 	tiles = "";
 	start = (z_volume-1)*num_y_volumes;
 	end = start + 2*num_y_volumes - 1;
@@ -59,11 +61,11 @@ if(num_z_volumes > 1){
 		}
 
 	}
-	print("Tiles:" + tiles);
+	print("Tiles: " + tiles);
 }
 
 
-if(num_z_volumes == 1){
+if(num_z_volumes == 1 || parallel == "false"){
 
 	run("Calculate pairwise shifts ...", "select="+xml_full_path+" process_angle=[All angles] process_channel=[All channels] process_illumination=[All illuminations] process_tile=[All tiles] process_timepoint=[All Timepoints] method=[Phase Correlation] downsample_in_x="+downsample_x+" downsample_in_y="+downsample_y+" downsample_in_z="+downsample_z);
 

@@ -46,7 +46,11 @@ then
 		echo "Fused Image Size: ${fused_image_size_gb} GB"
 		echo "Fused Image Size (rounded up): ${fused_image_size} GB"
 		
-		export merge_memory=$((fused_image_size*3))
+
+		if [ custom_merge_memory = false ];
+		then
+			export merge_memory=$((fused_image_size*merge_memory_multiplier))
+		fi
 
 		# update memory and threads for imagej
 		# need to allocate memory for processing of full fused image

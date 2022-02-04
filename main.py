@@ -72,17 +72,18 @@ def check_errors():
 if __name__ == '__main__':
 
 
-	xml_path = '/mnt/nfs/grids/hpc_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/estimate_overlaps_original.xml'
+	xml_path = '/mnt/nfs/grids/hpc_norepl/elowsky/AVP_test/pairwise_shifts.xml'
 	xml = StitchingXML(xml_path)
+	print(xml.pairwise_overlaps_1d)
 
 
-	overlaps = {'x':5.7, 'y':18, 'z':97.1}
-	xml.set_translation_to_grid_overlaps(overlaps)
-	xml.save_xml('estimate_overlaps')
+	#overlaps = {'x':5.7, 'y':18, 'z':97.1}
+	#xml.set_translation_to_grid_overlaps(overlaps)
+	#xml.save_xml('estimate_overlaps')
 
-	xml_path = '/mnt/nfs/grids/hpc_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/estimate_overlaps.xml'
-	xml = StitchingXML(xml_path)
-	xml.generate_report()
+	#xml_path = '/mnt/nfs/grids/hpc_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/estimate_overlaps.xml'
+	#xml = StitchingXML(xml_path)
+	#xml.generate_report()
 	
 
 	"""

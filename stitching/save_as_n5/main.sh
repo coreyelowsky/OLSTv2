@@ -8,7 +8,7 @@
 
 # input and output paths
 # input path assumes volumes folder exists
-export in_path=/grid/osten/data_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/
+export in_path=/grid/osten/data_norepl/elowsky/AVP_test/
 
 # resolution
 export res_x=.52
