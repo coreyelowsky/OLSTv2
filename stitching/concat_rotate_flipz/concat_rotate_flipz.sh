@@ -10,9 +10,9 @@ echo ""
 mv "$cur_dir"concat_rotate_flipz.sh.*${JOB_ID}* "$output_data_path_logs"logs
 
 # calculate z and y
-z_id=$(((SGE_TASK_ID-1) / num_y + start_z))
+z_id=$(((SGE_TASK_ID-1) / num_y_per_z + start_z))
 z_folder_path=${input_data_path}${dir_prefix}${z_id}/
-y_id=$(((SGE_TASK_ID-1) % num_y + 1))
+y_id=$(((SGE_TASK_ID-1) % num_y_per_z + start_y))
 
 echo "Z id: ${z_id}"
 echo "Y id: ${y_id}"
