@@ -43,7 +43,7 @@ export out_res_z=1.5
 export grid_size=20
 
 # xml filename
-# DO NOT INCLUlDE EXTENSON
+# DO NOT INCLUlDE .xml EXTENSON
 export xml_file_name=estimate_overlaps
 
 # if only want to fuse a small section then set to true
