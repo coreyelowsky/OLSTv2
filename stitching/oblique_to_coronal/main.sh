@@ -6,7 +6,7 @@
 ######## For User to Modify ########
 ####################################
 
-export input_volume_name='Z14_Y10'
+export input_volume_name='Z14_Y09'
 export input_volume_path=/mnt/nfs/grids/hpc_norepl/qi/data/GAD2/GAD2-GFP-M4/volumes/
 export output_volume_path=/data/elowsky/
 
@@ -14,7 +14,7 @@ export in_res_x=.78
 export in_res_y=.78
 export in_res_z=2.5
 
-export downsample_to_isotropic=false
+export downsample_to_isotropic=true
 
 #####################################
 #####################################
