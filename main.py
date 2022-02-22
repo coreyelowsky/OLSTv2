@@ -1,4 +1,5 @@
 from stitching.StitchingXML import StitchingXML
+
 import params
 import numpy as np
 import tifffile as tif
@@ -63,6 +64,41 @@ def check_errors():
 				#print(file_name)
 
 
+def brute_force_xmls(
+	x_min,
+	x_max,
+	x_step,
+	y_min, 
+	y_max, 
+	y_step, 
+	z_min, 
+	z_max, 
+	z_step,
+	xml_path,
+	out_path):
+
+	x_list = np.arange(x_min, x_max+1, y_step)
+	y_list = np.arange(y_min, y_max+1, y_step)
+	z_list = np.arange(z_min, z_max+1, z_step)
+
+	xml = StitchingXML(xml_path)
+
+	for x_overlap in x_list:
+		for y_overlap in y_list:
+			for z_overlap in z_list:
+
+		
+				overlaps = {'x':x_overlap, 'y':y_overlap, 'z':z_overlap}
+				xml.set_translation_to_grid_overlaps(overlaps)
+				xml.save_xml(join(out_path,f'estimate_overlaps_{y_overlap}_{z_overlap}'))
+
+				xml_path = join(out_path,f'estimate_overlaps_{y_overlap}_{z_overlap}.xml')
+				xml = StitchingXML(xml_path)
+				xml.generate_report()
+
+
+
+
 
 
 	
@@ -72,9 +108,9 @@ def check_errors():
 if __name__ == '__main__':
 
 
-	xml_path = '/mnt/nfs/grids/hpc_norepl/elowsky/AVP_test/pairwise_shifts.xml'
-	xml = StitchingXML(xml_path)
-	print(xml.pairwise_overlaps_1d)
+	#xml_path = '/mnt/nfs/grids/hpc_norepl/elowsky/AVP_test/pairwise_shifts.xml'
+	#xml = StitchingXML(xml_path)
+	#print(xml.pairwise_overlaps_1d)
 
 
 	#overlaps = {'x':5.7, 'y':18, 'z':97.1}
@@ -129,10 +165,37 @@ if __name__ == '__main__':
 			stop_volume=None)
 	"""
 
+	"""
+	x_min = 6.4
+	x_max = 6.4
+	x_step = 1
+	y_min = 12
+	y_max = 28
+	y_step = 2
+	z_min = 97
+	z_max = 97
+	z_step = 1
+
+	xml_path = '/mnt/nfs/grids/hpc_norepl/elowsky/AVP_test/translate_to_grid.xml'
+	out_path = '/mnt/nfs/grids/hpc_norepl/elowsky/AVP_test/brute_force_xmls/'
+
+	#brute_force_xmls(x_min, x_max, x_step, y_min, y_max, y_step, z_min, z_max, z_step, xml_path, out_path)
+	"""
+
+	# save one xml with specified overlap
+	
+	#xml_path = '/mnt/nfs/grids/hpc_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/downsample2_whole/estimate_overlaps.xml'
+	#xml = StitchingXML(xml_path)	
 
 
+	#overlaps = {'x':6.4, 'y':22, 'z':97}
+	#xml.set_translation_to_grid_overlaps(overlaps)
+	#xml.save_xml('estimate_overlaps_6.4_22_97')
 
 
+	xml_path = '/mnt/nfs/grids/hpc_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/downsample2_whole/estimate_overlaps_6.4_22_97.xml'
+	xml = StitchingXML(xml_path)	
+	xml.generate_report()
 
 	
 

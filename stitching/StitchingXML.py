@@ -1896,6 +1896,18 @@ class StitchingXML():
 
 		return coords
 
+	def modify_n5_path(self, path):
+
+		"""
+		modify n5 path
+
+		"""
+		
+		# get image loader element
+		image_loader = self.root.find('SequenceDescription').find('ImageLoader').find('n5')
+
+		image_loader.text = path
+
 
 	def modify_image_loader_for_saving_as_n5(self):
 
