@@ -7,7 +7,7 @@
 ####################################
 
 # input directory
-export input_data_path=/grid/osten/data_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/downsample2_whole/
+export input_data_path=/grid/osten/data_norepl/qi/data/PV/PV-GFP-M5/
 
 # merged memory
 export merge_memory_multiplier=4
@@ -44,11 +44,11 @@ export grid_size=20
 
 # xml filename
 # DO NOT INCLUlDE .xml EXTENSON
-export xml_file_name=estimate_overlaps_6.4_22_97
+export xml_file_name=estimate_overlaps
 
 # if only want to fuse a small section then set to true
 # otherwise set to false
-export fuse_region=true
+export fuse_region=false
 export z_min=15
 export z_max=20
 export y_min=14
@@ -110,6 +110,8 @@ if [ ! -d ${input_data_path}dataset.n5 ]; then
 	echo ""
 	echo "dataset.n5 does not exist..."
 	echo ""
+
+	exit
 fi
 
 

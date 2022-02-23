@@ -37,6 +37,8 @@ if [ ! -d ${data_path}dataset.n5 ]; then
 	echo ""
 	echo "dataset.n5 does not exist..."
 	echo ""
+
+	exit
 fi
 
 
