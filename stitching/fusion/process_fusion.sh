@@ -47,7 +47,7 @@ then
 		echo "Fused Image Size (rounded up): ${fused_image_size} GB"
 		
 
-		if [ custom_merge_memory = false ];
+		if [ $custom_merge_memory = false ];
 		then
 			export merge_memory=$((fused_image_size*merge_memory_multiplier))
 		fi

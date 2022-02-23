@@ -7,7 +7,7 @@
 ####################################
 
 # input directory
-export input_data_path=/grid/osten/data_norepl/qi/data/PV/PV-GFP-M5/
+export input_data_path=/grid/osten/data_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/downsample2_whole/ 
 
 # merged memory
 export merge_memory_multiplier=4
@@ -36,15 +36,15 @@ export start_from_merge=false
 export start_from_oblique_to_coronal=false
 
 # output resolution for z
-export out_res_z=3
+export out_res_z=150
 
 # grid dimensions for parallel fusion
 # e.g. if grid_size=2, will be a 2x2 grid -> 4 jobs
-export grid_size=20
+export grid_size=2
 
 # xml filename
 # DO NOT INCLUlDE .xml EXTENSON
-export xml_file_name=estimate_overlaps
+export xml_file_name=estimate_overlaps_6.4_22_97
 
 # if only want to fuse a small section then set to true
 # otherwise set to false
@@ -56,7 +56,7 @@ export y_max=17
 
 # whether to run oblique -> coronal transformations
 export oblique_to_coronal_isotropic=true
-export oblique_to_coronal_full_res=false
+export oblique_to_coronal_full_res=true
 
 # please make either 'coronal' or 'sagittal'
 # this is needed for oblique to coronal orientation
@@ -131,7 +131,7 @@ fi
 
 # if copmuting isotropic from full res then 
 # must merge full res image
-if [ $compute_isotropic_from_full_res = true ];
+if [ $compute_isotropic_from_full_res = true || $oblique_to_coronal_full_res = true ];
 then
 	merge_full_res_fused_image=true
 fi
