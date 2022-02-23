@@ -158,6 +158,7 @@ then
 		echo "Pixel Type: $pixel_type" >> "$output_data_path"params_fusion.txt
 		echo "Interpolation: $interpolation" >> "$output_data_path"params_fusion.txt
 		echo "blend: $blend" >> "$output_data_path"params_fusion.txt
+		echo "compute_isotropic_from_full_res: $compute_isotropic_from_full_res" >> "$output_data_path"params_fusion.txt
 		echo "" >> "$output_data_path"params_fusion.txt
 		echo ""
 

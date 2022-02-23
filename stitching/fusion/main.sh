@@ -271,8 +271,10 @@ then
 		echo "Pixel Type: $pixel_type" >> "$output_data_path"params_fusion.txt
 		echo "Interpolation: $interpolation" >> "$output_data_path"params_fusion.txt
 		echo "blend: $blend" >> "$output_data_path"params_fusion.txt
+		echo "compute_isotropic_from_full_res: $compute_isotropic_from_full_res" >> "$output_data_path"params_fusion.txt
 		echo "" >> "$output_data_path"params_fusion.txt
 		echo ""
+
 
 		# run python script to create bounding boxes and save xml
 		python $define_bounding_boxes_script $input_data_path ${xml_file_name}.xml $grid_size $downsampling $output_data_path $fuse_region $z_min $z_max $y_min $y_max
