@@ -56,7 +56,7 @@ export y_max=17
 
 # whether to run oblique -> coronal transformations
 export oblique_to_coronal_isotropic=true
-export oblique_to_coronal_full_res=true
+export oblique_to_coronal_full_res=false
 
 # please make either 'coronal' or 'sagittal'
 # this is needed for oblique to coronal orientation
