@@ -11,7 +11,7 @@ export x_max_overlap=4
 export x_step_overlap=1
 
 export y_min_overlap=20
-export y_max_overlap=30
+export y_max_overlap=20
 export y_step_overlap=5
 
 export z_min_overlap=97

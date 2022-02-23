@@ -136,7 +136,7 @@ tif.imwrite(output_image_path, cropped_image, imagej=True, resolution=(1./res[0]
 print('Save Max Projection...')
 sys.stdout.flush()
 res = [float(x) for x in res]
-tif.imwrite(output_image_path[-4:] + '_MAX_PROJECTION.tif', np.max(cropped_image,axis=0), imagej=True, resolution=(1./res[0], 1./res[1]), metadata={'unit':'um'})
+tif.imwrite(output_image_path[:-4] + '_MAX_PROJECTION.tif', np.max(cropped_image, axis=0), imagej=True, resolution=(1./res[0], 1./res[1]), metadata={'unit':'um'})
 
 print()
 print('Done!')
