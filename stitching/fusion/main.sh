@@ -9,6 +9,10 @@
 # input directory
 export input_data_path=/grid/osten/data_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/downsample2_whole/ 
 
+# xml filename
+# DO NOT INCLUlDE .xml EXTENSON
+export xml_file_name=estimate_overlaps_6.4_22_97
+
 # merged memory
 export merge_memory_multiplier=4
 export custom_merge_memory=false
@@ -36,15 +40,11 @@ export start_from_merge=false
 export start_from_oblique_to_coronal=false
 
 # output resolution for z
-export out_res_z=150
+export out_res_z=15
 
 # grid dimensions for parallel fusion
 # e.g. if grid_size=2, will be a 2x2 grid -> 4 jobs
-export grid_size=2
-
-# xml filename
-# DO NOT INCLUlDE .xml EXTENSON
-export xml_file_name=estimate_overlaps_6.4_22_97
+export grid_size=30
 
 # if only want to fuse a small section then set to true
 # otherwise set to false
@@ -131,7 +131,7 @@ fi
 
 # if copmuting isotropic from full res then 
 # must merge full res image
-if [ $compute_isotropic_from_full_res = true || $oblique_to_coronal_full_res = true ];
+if [[ $compute_isotropic_from_full_res = true || $oblique_to_coronal_full_res = true ]];
 then
 	merge_full_res_fused_image=true
 fi
