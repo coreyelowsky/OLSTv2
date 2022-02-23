@@ -90,6 +90,10 @@ export interpolation="[Linear Interpolation]"
 # blending
 export blend=true
 
+# whether to save max proj images
+# DO NOT CHANGE - THIS IS MEANT FOR BRUTE FORCE
+export max_proj=false
+
 #####################################
 #####################################
 #####################################

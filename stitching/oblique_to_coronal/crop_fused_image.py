@@ -22,6 +22,8 @@ output_path = args[2]
 res_x = args[3]
 res_y = args[4]
 res_z = args[5]
+max_proj = args[6]
+xml_name = args[7]
 res = [res_x, res_y, res_z]
 
 # get orientation
@@ -33,6 +35,11 @@ elif 'transverse' in input_image_path:
 	orientation = 'transverse'
 else:
 	sys.exit('Error: unable to parse orientation')
+
+if float(res_x) == float(res_y) == float(res_z):
+	res_identifier = 'isotropic'
+else:
+	res_identifier = 'full_res'
 
 print('Input Image Path:', input_image_path)
 print('Output Image Path:', output_image_path)
@@ -133,10 +140,17 @@ sys.stdout.flush()
 res = [float(x) for x in res]
 tif.imwrite(output_image_path, cropped_image, imagej=True, resolution=(1./res[0], 1./res[1]), metadata={'unit':'um', 'spacing':res[2], 'axes':'ZYX'})
 
-print('Save Max Projection...')
-sys.stdout.flush()
-res = [float(x) for x in res]
-tif.imwrite(output_image_path[:-4] + '_MAX_PROJECTION.tif', np.max(cropped_image, axis=0), imagej=True, resolution=(1./res[0], 1./res[1]), metadata={'unit':'um'})
+if max_proj == 'true':
+
+	print('Save Max Projection...')
+	sys.stdout.flush()
+	res = [float(x) for x in res]
+	tif.imwrite(output_image_path[:-4] + '_MAX_PROJECTION.tif', np.max(cropped_image, axis=0), imagej=True, resolution=(1./res[0], 1./res[1]), metadata={'unit':'um'})
+
+	out_path_max_proj = join(output_path, f'../../max_projection_{orientation}_{res_identifier}', xml_name + '.tif')
+	print('Max Projection Path:', out_path_max_proj)
+	tif.imwrite(out_path_max_proj, np.max(cropped_image, axis=0), imagej=True, resolution=(1./res[0], 1./res[1]), metadata={'unit':'um'})
+
 
 print()
 print('Done!')

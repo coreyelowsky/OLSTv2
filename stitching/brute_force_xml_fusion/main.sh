@@ -6,17 +6,17 @@
 
 # xml overlaps range
 # xml will be create for all combinations
-export x_min_overlap=4
-export x_max_overlap=4
+export x_min_overlap=5
+export x_max_overlap=6
 export x_step_overlap=1
 
 export y_min_overlap=20
 export y_max_overlap=20
-export y_step_overlap=5
+export y_step_overlap=.5
 
 export z_min_overlap=97
 export z_max_overlap=97
-export z_step_overlap=.5
+export z_step_overlap=1
 
 # input directory
 export input_data_path=/grid/osten/data_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/downsample2_whole/
@@ -24,6 +24,9 @@ export input_data_path=/grid/osten/data_norepl/qi/data/AVP/AVP-IHC-A2/downsample
 # xml filename
 # DO NOT INCLUlDE .xml EXTENSON
 export xml_file_name=estimate_overlaps
+
+# whether to save max proj images
+export max_proj=true
 
 # merged memory
 export merge_memory_multiplier=4
@@ -52,15 +55,15 @@ export start_from_merge=false
 export start_from_oblique_to_coronal=false
 
 # output resolution for z
-export out_res_z=25
+export out_res_z=200
 
 # grid dimensions for parallel fusion
 # e.g. if grid_size=2, will be a 2x2 grid -> 4 jobs
-export grid_size=5
+export grid_size=2
 
 # if only want to fuse a small section then set to true
 # otherwise set to false
-export fuse_region=true
+export fuse_region=false
 export z_min=9
 export z_max=13
 export y_min=8
@@ -68,7 +71,7 @@ export y_max=12
 
 # whether to run oblique -> coronal transformations
 export oblique_to_coronal_isotropic=true
-export oblique_to_coronal_full_res=false
+export oblique_to_coronal_full_res=true
 
 # please make either 'coronal' or 'sagittal'
 # this is needed for oblique to coronal orientation
@@ -139,6 +142,7 @@ python /grid/osten/data_norepl/elowsky/OLSTv2/stitching/brute_force_xml_fusion/g
 
 # output path where xmls will be saved to
 brute_force_xml_path=${data_path}brute_force_xmls/
+
 
 # get all xml files from path
 xml_path_array=($(ls -d ${brute_force_xml_path}*.xml))

@@ -33,6 +33,15 @@ out_dir_fusion = join(data_path, 'brute_force_fusions')
 if not exists(out_dir_fusion):
 	mkdir(out_dir_fusion)
 
+# make output directory for max projections
+orientations = ['sagittal', 'coronal', 'transverse']
+resolutions = ['isotropic', 'full_res']
+for orientation in orientations:
+	for resolution in resolutions:
+		max_proj_path = join(out_dir_fusion, f'max_projection_{orientation}_{resolution}')
+		if not exists(max_proj_path):
+			mkdir(max_proj_path)
+
 
 # get range lists
 x_list = np.arange(x_min, x_max+x_step, x_step)
