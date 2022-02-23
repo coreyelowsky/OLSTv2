@@ -100,6 +100,19 @@ echo "Fusion"
 echo "######"
 echo ""
 
+#make sure .n5 exists
+if [ ! -d ${input_data_path}dataset.n5 ]; then
+  
+	echo ""
+	echo "#####"
+	echo "Error"
+	echo "#####"
+	echo ""
+	echo "dataset.n5 does not exist..."
+	echo ""
+fi
+
+
 # make sure input path ends in /
 if [[ ! $input_data_path == */ ]];
 then

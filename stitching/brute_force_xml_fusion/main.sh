@@ -19,7 +19,7 @@ export z_max_overlap=97
 export z_step_overlap=.5
 
 # input directory
-export input_data_path=/grid/osten/data_norepl/qi/data/PV/PV-GFP-M4/
+export input_data_path=/grid/osten/data_norepl/qi/data/AVP/AVP-IHC-A2/downsample2/downsample2_whole/
 
 # xml filename
 # DO NOT INCLUlDE .xml EXTENSON
@@ -105,6 +105,18 @@ export blend=true
 #####################################
 #####################################
 #####################################
+
+#make sure .n5 exists
+if [ ! -d ${input_data_path}dataset.n5 ]; then
+  
+	echo ""
+	echo "#####"
+	echo "Error"
+	echo "#####"
+	echo ""
+	echo "dataset.n5 does not exist..."
+	echo ""
+fi
 
 
 # if brute 

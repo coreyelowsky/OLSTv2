@@ -47,7 +47,7 @@ for x_overlap in x_list:
 		for z_overlap in z_list:
 			overlaps = {'x':x_overlap, 'y':y_overlap, 'z':z_overlap}
 			xml.set_translation_to_grid_overlaps(overlaps)
-			xml.modify_n5_path('../dataset.n5')
+			xml.modify_n5_path('../../dataset.n5')
 			xml.save_xml(join(out_dir,f'estimate_overlaps_{x_overlap}_{y_overlap}_{z_overlap}'))
 
 			xml_path = join(out_dir,f'estimate_overlaps_{x_overlap}_{y_overlap}_{z_overlap}.xml')

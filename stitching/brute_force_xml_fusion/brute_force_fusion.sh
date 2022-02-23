@@ -164,9 +164,8 @@ then
 		# run python script to create bounding boxes and save xml
 		python $define_bounding_boxes_script ${input_data_path}brute_force_xmls ${xml_file_name}.xml $grid_size $downsampling $output_data_path $fuse_region $z_min $z_max $y_min $y_max
 		
-		# modify dataset path in xml
+
 		export xml_full_path="${output_data_path}${xml_file_name}_bboxes_${grid_size}.xml"
-		sed -i 's/dataset/\.\.\/\.\.\/dataset/' $xml_full_path
 		echo ""
 
 		# update memory and threads for imagej

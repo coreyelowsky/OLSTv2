@@ -27,6 +27,19 @@ export parallel=true
 #####################################
 #####################################
 
+#make sure .n5 exists
+if [ ! -d ${data_path}dataset.n5 ]; then
+  
+	echo ""
+	echo "#####"
+	echo "Error"
+	echo "#####"
+	echo ""
+	echo "dataset.n5 does not exist..."
+	echo ""
+fi
+
+
 # get current directory
 export cur_dir=`pwd`"/"
 
