@@ -1,4 +1,5 @@
 #!/bin/bash
+#test
 
 ####################################
 ######## For User to Modify ########
@@ -7,7 +8,7 @@
 # xml overlaps range
 # xml will be create for all combinations
 export x_min_overlap=5
-export x_max_overlap=6
+export x_max_overlap=5
 export x_step_overlap=1
 
 export y_min_overlap=20
@@ -71,7 +72,7 @@ export y_max=12
 
 # whether to run oblique -> coronal transformations
 export oblique_to_coronal_isotropic=true
-export oblique_to_coronal_full_res=true
+export oblique_to_coronal_full_res=false
 
 # please make either 'coronal' or 'sagittal'
 # this is needed for oblique to coronal orientation
