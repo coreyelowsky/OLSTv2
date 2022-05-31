@@ -8,12 +8,14 @@
 ####################################
 
 # input and output data directories
-export input_data_path=/grid/osten/data_norepl/qi/rawdata/AVP/AVP-IHC-A3/
-export output_data_path=/grid/osten/data_norepl/elowsky/concat_test/
+export input_data_path=/grid/osten/data_norepl/qi/rawdata/toBeDelete/AVP-IHC-A1/
+export output_data_path=/grid/osten/data_norepl/palmer/tile_screening_test/concat_AVP-IHC-A1_Z15/
 
 # preprocessing steps
 export flip_z=true
 export rotate=true
+export max_project=true
+export output_max_project_path=/grid/osten/data_norepl/palmer/tile_screening_test/max_projections_AVP-IHC-A1_Z15/
 
 # how to downsample
 export downsample=false
@@ -30,14 +32,14 @@ export dir_prefix='ch1_Z_'
 export process_all_z_folders=false
 
 # ignore if processing all folders
-export start_z=3
-export end_z=5
-export start_y=7
-export end_y=8
+export start_z=15
+export end_z=15
+export start_y=1
+export end_y=26
 
 
 # amount of memory in GB per job
-export memory_per_job=35
+export memory_per_job=125
 
 # how many threads per job
 export threads_per_job=8
@@ -128,6 +130,8 @@ echo "Input Data Path: ${input_data_path}" >> "${output_data_path_logs}params.tx
 echo "Output Data Path: $output_data_path" >> "${output_data_path_logs}params.txt"
 echo "Flip Z: ${flip_z}" >> "${output_data_path_logs}params.txt"
 echo "Rotate: ${rotate}" >> "${output_data_path_logs}params.txt"
+echo "Max Project: ${max_project}" >> "${output_data_path_logs}params.txt"
+echo "Max Project Output Path: ${output_max_project_path}" >> "${output_data_path_logs}params.txt"
 echo "Process All Folders: ${process_all_z_folders}" >> "${output_data_path_logs}params.txt"
 echo "Start Z: ${start_z}" >> "${output_data_path_logs}params.txt"
 echo "End Z: ${end_z}" >> "${output_data_path_logs}params.txt"

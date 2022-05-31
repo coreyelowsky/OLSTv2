@@ -14,6 +14,8 @@ downsample_xy = args[6];
 z_id = parseInt(args[7]);
 y_id = parseInt(args[8]);
 stacks_per_volume = parseInt(args[9]);
+max_project=args[10];
+output_max_project_path=args[11];
 
 print("");
 print("#################################");
@@ -25,6 +27,8 @@ print("Input Data Path: " + z_folder);
 print("Output Data Path: " + output_data_path);
 print("Flip Z: " + flip_z);
 print("Rotate: " + rotate);
+print("Max Project: " + max_project);
+print("Max Project Output Path: " + output_max_project_path);
 print("Directory Prefix: " + dir_prefix);
 print("Downsample: " + downsample_bool);
 print("Downsample_xy: " + downsample_xy);
@@ -185,6 +189,15 @@ time_save_start = getTime();
 saveAs("Tiff", output_data_path + volume_id + '.tif');
 time_save_end = getTime();
 print('Time to Write: ' + time_elapsed(time_save_start, time_save_end));
+
+//max project
+if(max_project){
+	time_max_project_start = getTime();
+	run("Z Project...", "projection=[Max Intensity]");
+	time_max_project_end = getTime();
+	print('Time to Max Project: ' + time_elapsed(time_max_project_start, time_max_project_end));
+	saveAs("Tiff", output_max_project_path + 'MAX_' + volume_id + '.tif');
+}
 
 // close all windows
 while(nImages > 0) {
